@@ -1,121 +1,89 @@
 import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
 import './App.css'
 
+const API_URL =
+  'https://curriculum-10-oki-hashimoto-6taoulgp3q-uc.a.run.app'
+
 function App() {
-  const [count, setCount] = useState(0)
+  const [history, setHistory] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
+
+  // FastAPIから、DBに保存されている履歴を取得する
+  const getHistory = async () => {
+    setLoading(true)
+    setMessage('')
+    setError('')
+
+    try {
+      const response = await fetch(`${API_URL}/chats`)
+
+      if (!response.ok) {
+        throw new Error(`履歴の取得に失敗しました：HTTP ${response.status}`)
+      }
+
+      const data = await response.json()
+
+      if (!Array.isArray(data)) {
+        throw new Error('受け取ったデータが想定した形式ではありません')
+      }
+
+      setHistory(data)
+      setMessage(`接続成功！ 履歴は${data.length}件です`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
+    <main>
+      <h1>AIチャットの履歴</h1>
+      <p>CloudflareからFastAPIに接続して、履歴を取得します。</p>
+
+      <button
+        type="button"
+        onClick={getHistory}
+        disabled={loading}
+      >
+        {loading ? '取得中…' : '履歴を取得'}
+      </button>
+
+      {message && <p role="status">{message}</p>}
+
+      {error && (
+        <p role="alert" style={{ color: 'crimson' }}>
+          {error}
+        </p>
+      )}
+
+      <section aria-label="チャット履歴">
+        {history.map((chat) => (
+          <article
+            key={chat.id}
+            style={{
+              border: '1px solid #888',
+              borderRadius: '8px',
+              padding: '16px',
+              marginTop: '16px',
+              textAlign: 'left',
+            }}
+          >
+            <h2>質問</h2>
+            <p style={{ whiteSpace: 'pre-wrap' }}>
+              {chat.question}
+            </p>
+
+            <h2>回答</h2>
+            <p style={{ whiteSpace: 'pre-wrap' }}>
+              {chat.answer}
+            </p>
+          </article>
+        ))}
       </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+    </main>
   )
 }
 
