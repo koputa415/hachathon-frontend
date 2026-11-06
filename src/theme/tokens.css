@@ -1,0 +1,43 @@
+/* 第0部のデザイン決定。T1-1 では定義のみ（画面への読み込みは後続タスク）。 */
+:root {
+  /* 白とグレーを基調とする共通パレット。 */
+  --color-white: #FFFFFF;
+  --color-gray-50: #F8FAFC;
+  --color-gray-100: #F1F5F9;
+  --color-gray-200: #E2E8F0;
+  --color-gray-500: #64748B;
+  --color-gray-600: #475569;
+  --color-gray-900: #0F172A;
+
+  --color-background: var(--color-gray-50);
+  --color-surface: var(--color-white);
+  --color-surface-muted: var(--color-gray-100);
+  --color-border: var(--color-gray-200);
+  --color-text: var(--color-gray-900);
+  --color-text-secondary: var(--color-gray-600);
+  --color-text-muted: var(--color-gray-500);
+  --color-text-on-primary: var(--color-white);
+  --color-primary: #4F46E5; /* インディゴ */
+  --color-secondary: #0D9488; /* ティール（補助色） */
+
+  /* コーラル：「まだ知らない趣味」の目玉カードの CTA・チップ・上部ライン専用。
+     通常のボタン・価格表示・ナビゲーションには使わない。 */
+  --color-discovery-accent: #F97360;
+
+  /* カード・ボタンともに 8px を基準とする。 */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-card: var(--radius-md);
+  --radius-button: var(--radius-md);
+
+  /* 4px を基本単位とする余白。番号は基本単位の倍数。 */
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+}
