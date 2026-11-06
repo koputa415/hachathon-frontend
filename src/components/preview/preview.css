@@ -1,0 +1,32 @@
+/* このリセットはプレビュー専用 HTML でのみ読み込む。 */
+body { margin: var(--space-0); background: var(--color-background); }
+.components-preview {
+  color-scheme: light;
+  background: var(--color-background);
+  color: var(--color-text);
+  font: 1rem/1.6 system-ui, sans-serif;
+}
+.preview-main {
+  display: grid;
+  gap: var(--space-8);
+  max-width: 1080px;
+  margin: var(--space-0) auto;
+  padding: var(--space-8) var(--space-4);
+}
+.preview-main h1 { margin: var(--space-2) var(--space-0); font-size: clamp(1.5rem, 4vw, 2rem); }
+.preview-main h2 { margin: var(--space-0) var(--space-0) var(--space-4); font-size: 1.125rem; }
+.preview-main p { margin: var(--space-0); }
+.preview-eyebrow { color: var(--color-primary); font-weight: 600; }
+.preview-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.preview-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); }
+.preview-feedback {
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+}
+@media (max-width: 640px) {
+  .preview-main { padding: var(--space-6) var(--space-4); }
+  .preview-grid { grid-template-columns: minmax(0, 1fr); }
+}
