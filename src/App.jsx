@@ -50,7 +50,13 @@ export default function App() {
       : <Login key={protectedRoute ? path : next} auth={auth} returnTo={protectedRoute ? path : next} />
   } else if (path === '#/') {
     currentId = 'home'
-    content = <Home onOpenItem={(id) => navigate(`#/items/${id}`)} />
+    content = <Home key={route} search={route.split('?')[1] || ''}
+      onSearch={({ q, category }) => {
+        const query = new URLSearchParams()
+        if (q) query.set('q', q)
+        if (category) query.set('category', category)
+        navigate(query.size ? `#/?${query}` : '#/')
+      }} onOpenItem={(id) => navigate(`#/items/${id}`)} />
   } else if (path === '#/listing') {
     currentId = 'listing'
     content = <ListingForm key={auth.user.id} onRequireAuth={() => requireAuth(path)} />

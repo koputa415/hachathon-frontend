@@ -43,9 +43,11 @@ function readItem(item) {
   return { ...item, imageUrl: item.image_path ? apiUrl(item.image_path) : null }
 }
 
-export async function listItems(cursor, signal) {
+export async function listItems(cursor, signal, filters = {}) {
   const query = new URLSearchParams({ limit: '24' })
   if (cursor !== null) query.set('before_id', String(cursor))
+  if (filters.q) query.set('q', filters.q)
+  if (filters.category) query.set('category', filters.category)
   const page = await apiRequest(`/items?${query}`, { signal })
   if (!page || !Array.isArray(page.items)
     || (page.next_cursor !== null && (!Number.isSafeInteger(page.next_cursor) || page.next_cursor <= 0))) {
