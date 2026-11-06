@@ -9,7 +9,7 @@ export default function Login({ auth, returnTo = '#/' }) {
   const isRegistration = mode === 'register'
   const reason = returnTo === '#/listing' ? '出品するにはログインが必要です。'
     : returnTo.startsWith('#/items/') ? '購入するにはログインが必要です。'
-    : returnTo === '#/chat-history' ? '履歴を見るにはログインが必要です。' : '道具との出会いを、ここから。'
+    : '道具との出会いを、ここから。'
 
   async function handleSubmit(event) {
     event.preventDefault()

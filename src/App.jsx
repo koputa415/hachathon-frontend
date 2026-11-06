@@ -6,7 +6,6 @@ import { loginHash, loginReturnTo } from './utils/authRedirect.js'
 import Home from './pages/Home.jsx'
 import ItemDetail from './pages/ItemDetail.jsx'
 import ListingForm from './pages/ListingForm.jsx'
-import ChatHistory from './pages/ChatHistory.jsx'
 import Login from './pages/Login.jsx'
 import { demoItems, hobbyCategories } from './pages/demoData.js'
 import './App.css'
@@ -15,12 +14,11 @@ export default function App() {
   const [route, navigate] = useHashRoute()
   const auth = useAuth()
   const path = route.split('?')[0]
-  const protectedRoute = path === '#/listing' || path === '#/chat-history'
+  const protectedRoute = path === '#/listing'
   const next = loginReturnTo(route)
   const navItems = [
     { id: 'home', label: 'ホーム', href: '#/' },
     { id: 'listing', label: '出品', href: '#/listing' },
-    { id: 'history', label: 'チャット履歴', href: '#/chat-history' },
     ...(!auth.isAuthenticated ? [{ id: 'login', label: 'ログイン', href: '#/login' }] : []),
   ]
 
@@ -57,9 +55,6 @@ export default function App() {
   } else if (path === '#/listing') {
     currentId = 'listing'
     content = <ListingForm key={auth.user.id} categories={hobbyCategories} onRequireAuth={() => requireAuth(path)} />
-  } else if (path === '#/chat-history') {
-    currentId = 'history'
-    content = <ChatHistory key={auth.user.id} loadHistory={auth.loadHistory} />
   } else {
     const item = demoItems.find((candidate) => path === `#/items/${candidate.id}`)
     content = item ? (
@@ -87,7 +82,7 @@ export default function App() {
         <p>{auth.notice}</p>
         {auth.status === 'error' && <Button variant="secondary" onClick={() => { void auth.restoreSession() }}>再試行</Button>}
       </div>}
-      {path !== '#/chat-history' && path !== '#/login' && <p className="app-sample-note">サンプル表示：商品・おすすめ・出品フォームは表示確認用です。</p>}
+      {path !== '#/login' && <p className="app-sample-note">サンプル表示：商品・おすすめ・出品フォームは表示確認用です。</p>}
       <main className="app-main" id="page-content" tabIndex={-1}>{content}</main>
       <BottomNav items={navItems} currentId={currentId} />
     </div>

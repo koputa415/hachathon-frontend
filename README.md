@@ -37,14 +37,12 @@ If you are developing a production application, we recommend using TypeScript wi
 | `src/pages/Home.css` | ホーム専用目玉カード。コーラルを3用途に限定する。 | theme のトークン。 |
 | `src/pages/ItemDetail.jsx` | 仮商品の詳細・状態・購入ボタンの表示確認。 | ItemCard・Button。 |
 | `src/pages/ListingForm.jsx` | 認証後の入力フォームと入力内容のプレビュー。実際の出品はしない。 | ItemCard・Button。 |
-| `src/pages/ChatHistory.jsx` | JWTで本人のチャット履歴を取得する画面。 | 既存の /chats API・Button。 |
 | `src/pages/demoData.js` | 5趣味クラスタの表示確認用商品データ。 | 画面側のみ。 |
 | `src/pages/pages.css` | 画面のカード配置・フォーム・余白の共通スタイル。 | theme のトークン。 |
 | `src/pages/Login.jsx` | トークンと共通Buttonによる登録・ログイン。入力パスワードを保持しない。 | hooksの認証操作。 |
 | `src/api/client.js` | 環境別のAPI接続・Bearerヘッダー・安全なエラー表示。 | VITE_API_BASE_URL。 |
 | `src/api/auth.js` | 登録・ログイン・本人情報APIと応答の検証。 | APIクライアント。 |
-| `src/api/chats.js` | JWT付きの本人のチャット履歴取得。 | APIクライアント。 |
-| `src/api/session.js` | タブ内トークン保持・本人確認・期限切れ・401・古い応答の排除。 | 認証／履歴API。 |
+| `src/api/session.js` | タブ内トークン保持・本人確認・期限切れ・401・古い応答の排除。 | 認証API。 |
 | `src/hooks/useHashRoute.js` | URLの変更を購読し、ログアウト等の遷移を一貫して扱う。 | App。 |
 | `src/hooks/useAuth.js` | 認証状態の購読と復元・操作を画面に渡す。 | session。 |
 | `src/utils/authRedirect.js` | 内部画面だけを許可するログイン後の戻り先。 | App・Login。 |
@@ -88,7 +86,6 @@ import { Button, ItemCard, Header, BottomNav, StatusBadge } from './components'
 | `/#/items/1` | 販売中の商品詳細 |
 | `/#/items/2` | 売却済みの商品詳細（購入ボタン無効） |
 | `/#/listing` | ログイン後の出品フォーム。入力チェック後にプレビュー表示。実際の出品なし |
-| `/#/chat-history` | ログイン後の本人の履歴。JWT付き取得APIを使用 |
 | `/#/login` | 登録・ログイン画面 |
 
 現在の元コードには3画面がなかったため、T1-3 では仮データの3画面を新規作成した。
@@ -100,7 +97,7 @@ import { Button, ItemCard, Header, BottomNav, StatusBadge } from './components'
 
 ### API の接続先
 
-T2-2 のバックエンド（登録・ログイン・本人確認・履歴API）を起動する。
+T2-2 のバックエンド（登録・ログイン・本人確認API）を起動する。
 本番DBを使う場合は、T2-2の所有者列等の移行とJWTシークレット設定を先に済ませる。
 設定名の見本は `.env.example`。値は自分の環境の `.env.local` に設定する。
 
@@ -114,8 +111,8 @@ T2-2 のバックエンド（登録・ログイン・本人確認・履歴API）
 
 ### 動作
 
-- 同じ画面でログイン／新規登録を切り替える。成功後は元の出品画面・商品詳細・履歴へ戻る。
-- ホームと商品閲覧は公開。出品フォーム・履歴は保護し、未ログインの購入ボタンもログインへ誘導する。
+- 同じ画面でログイン／新規登録を切り替える。成功後は元の出品画面・商品詳細へ戻る。
+- ホームと商品閲覧は公開。出品フォームは保護し、未ログインの購入ボタンもログインへ誘導する。
 - 購入・出品は引き続きサンプル表示。サーバーへの実購入・出品APIは呼ばない。
 - JWTと期限だけを **sessionStorage** に保持する。同じタブの再読み込みで復元し、タブを閉じると保持は終了する。
 - 再読み込み時は必ず `/auth/me` に照会し、本人確認前・通信失敗時に保護画面を表示しない。保存した表示名等を認証の根拠にしない。
@@ -140,7 +137,7 @@ AUTH_E2E_ALLOW_REGISTRATION=1 AUTH_E2E_BASE_URL=http://localhost:5181 npm run te
 ループバックURLだけを許可し、登録実行の設定がある場合だけテストする。
 Chromiumの代わりに導入済みブラウザーを使う場合は `PLAYWRIGHT_CHANNEL=msedge` 等を指定できる。
 画像と結果は既定で `test-results/auth/`（Git除外）、`AUTH_E2E_OUTPUT_DIR` で変更可能。
-登録・ログイン・本人情報・履歴の成功系は実APIで検証する。
+登録・ログイン・本人情報の成功系は実APIで検証する。
 通信失敗・401・期限短縮はブラウザーのネットワーク差し替えで確認する。秘密値は結果へ記録しない。
 
 参照：[React公式 useSyncExternalStore](https://react.dev/reference/react/useSyncExternalStore)、

@@ -24,6 +24,10 @@ async function run() {
   const page = await context.newPage()
   page.setDefaultTimeout(10000)
   const errors = []
+  let chatRequests = 0
+  page.on('request', request => {
+    if (/\/(?:api\/)?chats(?:\/|$)/.test(new URL(request.url()).pathname)) chatRequests += 1
+  })
   page.on('pageerror', error => errors.push(error.message))
   const loginTitle = () => page.getByRole('heading', { name: 'ログイン', exact: true })
   const listingTitle = () => page.getByRole('heading', { name: '道具を出品する', exact: true })
@@ -39,6 +43,12 @@ async function run() {
     await page.getByRole('heading', { name: 'まだ知らない趣味に、気軽に出会える。', exact: true }).waitFor()
   }
   try {
+    await page.goto(`${base}/#/`)
+    await page.getByRole('heading', { name: 'まだ知らない趣味に、気軽に出会える。', exact: true }).waitFor()
+    assert.equal(await page.getByRole('link', { name: 'チャット履歴', exact: true }).count(), 0)
+    await page.goto(`${base}/#/chat-history`)
+    await page.getByRole('heading', { name: 'ページが見つかりません', exact: true }).waitFor()
+    checks.push('チャット履歴の導線がなく、旧URLにも画面を表示しない')
     await page.goto(`${base}/#/listing`)
     await loginTitle().waitFor()
     assert.equal(await privateField().count(), 0)
@@ -49,7 +59,7 @@ async function run() {
     await page.getByRole('button', { name: '購入手続きへ', exact: true }).click()
     await loginTitle().waitFor()
     assert.equal(await page.getByText('サンプル表示のため、購入手続きは行いません。', { exact: true }).count(), 0)
-    await page.screenshot({ path: path.join(outputs, 't2-3-login-desktop.png'), fullPage: true })
+    await page.screenshot({ path: path.join(outputs, 'auth-without-history-desktop.png'), fullPage: true })
     checks.push('未ログインの購入操作をログインへ誘導する')
 
     await page.getByRole('button', { name: '新規登録に切り替える' }).click()
@@ -71,7 +81,7 @@ async function run() {
     await page.getByRole('button', { name: '出品する', exact: true }).click()
     await listingTitle().waitFor()
     await privateField().waitFor()
-    await page.screenshot({ path: path.join(outputs, 't2-3-authenticated-desktop.png'), fullPage: true })
+    await page.screenshot({ path: path.join(outputs, 'auth-without-history-authenticated.png'), fullPage: true })
     let releaseMe
     const meGate = new Promise(resolve => { releaseMe = resolve })
     await page.route('**/api/auth/me', async route => { await meGate; await route.continue() })
@@ -119,49 +129,15 @@ async function run() {
     await listingTitle().waitFor()
     checks.push('本人確認の通信失敗では保護画面を出さず、トークンを保持して再試行で復帰する')
 
-    await page.getByRole('link', { name: 'チャット履歴', exact: true }).click()
-    const historyRequest = page.waitForRequest(request => request.url().endsWith('/api/chats'))
-    await page.getByRole('button', { name: '履歴を取得', exact: true }).click()
-    assert.equal((await historyRequest).headers().authorization?.startsWith('Bearer '), true)
-    await page.getByText('履歴は0件です', { exact: true }).waitFor()
-    let releaseOldHistory
-    let completeOldHistory
-    const oldGate = new Promise(resolve => { releaseOldHistory = resolve })
-    const oldCompleted = new Promise(resolve => { completeOldHistory = resolve })
-    await page.route('**/api/chats', async route => {
-      await oldGate
-      try {
-        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ id: 1, question: 'previous-account-private', answer: 'must not appear' }]) })
-      } catch { /* ログアウトで中断されたリクエストは配信しない。 */ }
-      finally { completeOldHistory() }
-    }, { times: 1 })
-    const oldRequest = page.waitForRequest(request => request.url().endsWith('/api/chats'))
-    await page.getByRole('button', { name: '履歴を取得', exact: true }).click()
-    await oldRequest
-    await signOut()
-    await page.goto(`${base}/#/login?next=${encodeURIComponent('#/chat-history')}`)
-    await loginTitle().waitFor()
-    await page.getByRole('button', { name: '新規登録に切り替える' }).click()
-    await page.getByLabel('表示名', { exact: true }).fill(`別アカウント-${suffix}`)
-    await page.getByLabel('メールアドレス', { exact: true }).fill(`other-${email}`)
-    await page.getByLabel('パスワード（8〜128文字）', { exact: true }).fill(password)
-    await page.getByRole('button', { name: '登録して続ける', exact: true }).click()
-    await page.getByRole('heading', { name: 'AIチャットの履歴', exact: true }).waitFor()
-    releaseOldHistory()
-    await oldCompleted
-    await page.getByRole('button', { name: '履歴を取得', exact: true }).click()
-    await page.getByText('履歴は0件です', { exact: true }).waitFor()
-    assert.equal(await page.getByText('previous-account-private', { exact: true }).count(), 0)
-    checks.push('別アカウントに切り替えた後、遅れて届く前のアカウントの履歴を表示しない')
-    await page.route('**/api/chats', route => route.fulfill({ status: 401, contentType: 'application/json', body: '{"detail":"Invalid credentials"}' }))
-    await page.getByRole('button', { name: '履歴を取得', exact: true }).click()
+    await page.route('**/api/auth/me', route => route.fulfill({ status: 401, contentType: 'application/json', body: '{"detail":"Invalid credentials"}' }))
+    await page.reload()
     await loginTitle().waitFor()
     assert.equal(await stored(), null)
-    await page.unroute('**/api/chats')
-    checks.push('履歴にBearer JWTを付け、保護APIの401で保持状態を破棄してログインへ戻す')
+    await page.unroute('**/api/auth/me')
+    checks.push('本人確認APIの401で保持状態を破棄してログインへ戻す')
 
     await fillLogin()
-    await page.getByRole('heading', { name: 'AIチャットの履歴', exact: true }).waitFor()
+    await listingTitle().waitFor()
     await page.evaluate(key => sessionStorage.setItem(key, JSON.stringify({ token: 'forged.token.value', expiresAt: Date.now() + 60000, user: { display_name: 'forged' } })), storageKey)
     await page.reload()
     await loginTitle().waitFor()
@@ -199,10 +175,12 @@ async function run() {
     await loginTitle().waitFor()
     await page.setViewportSize({ width: 375, height: 812 })
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false)
-    await page.screenshot({ path: path.join(outputs, 't2-3-login-mobile.png'), fullPage: true })
+    await page.screenshot({ path: path.join(outputs, 'auth-without-history-mobile.png'), fullPage: true })
+    assert.equal(chatRequests, 0)
+    checks.push('履歴APIへのリクエストが発生しない')
     assert.deepEqual(errors, [])
     const result = { passed: true, backend: 'real local T2-2 API and isolated PostgreSQL', checks, runtimeErrors: errors }
-    await fs.writeFile(path.join(outputs, 't2-3-verification.json'), JSON.stringify(result, null, 2))
+    await fs.writeFile(path.join(outputs, 'auth-without-history-verification.json'), JSON.stringify(result, null, 2))
     console.log(JSON.stringify(result, null, 2))
   } finally { await browser.close() }
 }

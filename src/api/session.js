@@ -1,6 +1,4 @@
 import { authenticate, getCurrentUser } from './auth.js'
-import { getChatHistory } from './chats.js'
-import { ApiError } from './client.js'
 
 const storageKey = 'hackathon.auth.session'
 const expiredMessage = 'ログインの有効期限が切れました。もう一度ログインしてください。'
@@ -116,21 +114,6 @@ async function signIn(mode, credentials) {
 
 export const login = (credentials) => signIn('login', credentials)
 export const register = (credentials) => signIn('register', credentials)
-
-export async function loadHistory(signal) {
-  if (!hasSession()) throw new ApiError(401, expiredMessage)
-  const currentGeneration = generation
-  const token = session.token
-  try {
-    const data = await getChatHistory(token, signal)
-    if (currentGeneration !== generation) throw new DOMException('Session changed', 'AbortError')
-    return data
-  } catch (error) {
-    if (currentGeneration !== generation) throw new DOMException('Session changed', 'AbortError')
-    if (error.status === 401) logout(expiredMessage)
-    throw error
-  }
-}
 
 export function subscribe(listener) {
   listeners.add(listener)

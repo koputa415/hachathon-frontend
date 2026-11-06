@@ -1,6 +1,6 @@
 // 戻り先は既存画面の内部ハッシュだけを許可し、外部URLへは遷移しない。
 export function safeReturnTo(value) {
-  return typeof value === 'string' && (/^#\/(?:listing|chat-history)$/.test(value) || /^#\/items\/[1-9]\d*$/.test(value)) ? value : '#/'
+  return typeof value === 'string' && (/^#\/listing$/.test(value) || /^#\/items\/[1-9]\d*$/.test(value)) ? value : '#/'
 }
 
 export function loginHash(next) {
