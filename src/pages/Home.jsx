@@ -77,7 +77,10 @@ export default function Home({ onOpenItem, search, onSearch }) {
           </div>}
           <div className="page-actions">
             <Button type="submit" disabled={catalog.loading || Boolean(catalog.error)}>検索する</Button>
-            <a className="page-link" href="#/">条件をクリア</a>
+            <a className="page-link" href="#/" onClick={() => {
+              setFilters({ q: '', category: '' })
+              setRequest({ cursor: null, q: '', category: '' })
+            }}>条件をクリア</a>
           </div>
         </form>
         {loading && <p role="status">商品を読み込んでいます…</p>}

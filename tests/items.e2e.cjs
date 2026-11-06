@@ -157,6 +157,12 @@ async function run() {
     assert.equal(await page.getByText('はじめてのフィルムカメラ', { exact: true }).count(), 0)
     await page.setViewportSize({ width: 1280, height: 900 })
     await page.screenshot({ path: path.join(outputs, 'items-home-desktop.png'), fullPage: true })
+    await page.getByLabel('キーワード', { exact: true }).fill('未送信の検索語')
+    await page.getByLabel('カテゴリで絞り込む', { exact: true }).selectOption('その他')
+    await page.getByRole('link', { name: '条件をクリア', exact: true }).click()
+    assert.equal(await page.getByLabel('キーワード', { exact: true }).inputValue(), '')
+    assert.equal(await page.getByLabel('カテゴリで絞り込む', { exact: true }).inputValue(), '')
+    checks.push('未送信の入力も条件をクリアでリセットする')
     assert.deepEqual(errors, [])
     const result = { passed: true, itemId: created.id, title, checks, itemReadRequests: reads.length, runtimeErrors: errors,
       backend: 'Real local FastAPI / PostgreSQL / GCS-compatible emulator; only empty and failure states are intercepted' }
