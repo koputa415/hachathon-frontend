@@ -27,4 +27,6 @@ dist-ssr
 .env
 .env.*
 !.env.example
+# 本番向けの公開API URLだけを含む設定
+!.env.production
 test-results/

@@ -1,4 +1,4 @@
-const apiBase = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/+$/, '')
+const apiBase = (import.meta.env.VITE_API_BASE_URL?.trim() || '/api').replace(/\/+$/, '')
 
 export class ApiError extends Error {
   constructor(status, message, issues = []) {
@@ -28,6 +28,8 @@ export async function apiRequest(path, { method = 'GET', body, token, signal } =
     if (error.name === 'AbortError') throw error
     throw new ApiError(0, '接続できませんでした。通信環境を確認して、もう一度お試しください。')
   }
+  const authPath = /^\/auth\/(register|login|me)$/.test(path)
+  const configurationMessage = '認証サービスに接続できません。公開設定の確認が必要です。'
   if (!response.ok) {
     if (path.startsWith('/items')) {
       let issues = []
@@ -50,12 +52,16 @@ export async function apiRequest(path, { method = 'GET', body, token, signal } =
         : 'サーバーで出品を完了できませんでした。時間をおいて、もう一度お試しください。'
       throw new ApiError(response.status, message, issues)
     }
-    const message = response.status === 401 ? 'メールアドレスまたはパスワードが正しくありません。'
+    const message = authPath && [404, 405].includes(response.status) ? configurationMessage
+      : response.status === 401 ? 'メールアドレスまたはパスワードが正しくありません。'
       : response.status === 409 ? 'このメールアドレスは登録済みです。ログインしてください。'
       : response.status === 422 ? '入力内容を確認してください。'
       : '処理を完了できませんでした。時間をおいて、もう一度お試しください。'
     // サーバー本文や入力パスワードをエラー表示・ログへ流さない。
     throw new ApiError(response.status, message)
+  }
+  if (authPath && response.headers.get('content-type')?.includes('text/html')) {
+    throw new ApiError(response.status, configurationMessage)
   }
   try {
     return await response.json()

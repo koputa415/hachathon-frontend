@@ -47,6 +47,8 @@ If you are developing a production application, we recommend using TypeScript wi
 | `src/hooks/useHashRoute.js` | URLの変更を購読し、ログアウト等の遷移を一貫して扱う。 | App。 |
 | `src/hooks/useAuth.js` | 認証状態の購読と復元・操作を画面に渡す。 | session。 |
 | `src/utils/authRedirect.js` | 内部画面だけを許可するログイン後の戻り先。 | App・Login。 |
+| `.env.production` | 本番ビルドの公開API接続先。秘密値は置かず環境変数で上書き可能。 | Vite。 |
+| `scripts/check-auth-api.mjs` | 公開OpenAPIに登録・ログイン・本人確認があることをGETだけで確認する。 | 本番反映前チェック。 |
 | `.env.example` | 秘密値を含まないAPI設定名の見本。 | Vite。 |
 | `tests/listing.e2e.cjs` | 実APIの画像付き出品・画像再取得・入力とサーバーエラー・二重送信抑止・401のブラウザーテスト。 | Playwright・分離DB・GCSエミュレーター。 |
 | `tests/auth.e2e.cjs` | 実APIでの登録・ログイン・再読み込み・保護導線と異常系のブラウザーテスト。 | Playwright（開発依存）。 |
@@ -105,7 +107,7 @@ T2-2 のバックエンド（登録・ログイン・本人確認API）を起動
 
 - `VITE_API_BASE_URL`: フロントエンドから見たAPIの基底URL。未設定時は `/api`。
 - `API_PROXY_TARGET`: 開発用Viteの `/api` の接続先。既定は `http://127.0.0.1:8001`。
-- 本番ビルドでは `VITE_API_BASE_URL` にバックエンドの HTTPS URL を設定する（末尾スラッシュは任意）。Viteの開発用プロキシは本番には含まれない。
+- 本番ビルドは `.env.production` の公開Cloud Run URLを使う。Cloudflare等のビルド環境で `VITE_API_BASE_URL` を設定すると上書きできる。Viteの開発用プロキシは本番には含まれない。未設定・相対URLでは公開ビルドを止める。
 - JWTシークレットやDBパスワードをフロントエンドの環境変数に入れない。
 
 例：ローカルAPIを8012で動かす場合、`.env.local` に `API_PROXY_TARGET=http://127.0.0.1:8012` を設定して `npm run dev`。
@@ -145,6 +147,25 @@ Chromiumの代わりに導入済みブラウザーを使う場合は `PLAYWRIGHT
 参照：[React公式 useSyncExternalStore](https://react.dev/reference/react/useSyncExternalStore)、
 [Vite公式 proxy](https://vite.dev/config/server-options.html#server-proxy)、
 [OWASP Storage APIs](https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html#storage-apis)。
+
+## 公開サイトの認証接続
+
+Cloudflareは静的アセットの配信であり、Vite開発サーバーの `/api` プロキシは存在しない。
+`.env.production` には公開Cloud Run URLだけを設定する。秘密情報は含めない。
+
+公開前に次を実行する。このチェックはGETのみで、登録や本番DBへの書き込みをしない。
+
+```sh
+npm run check:auth-api
+npm run build
+```
+
+公開ビルドのAPI接続先はコミット済みの `.env.production` またはビルド環境の `VITE_API_BASE_URL` から取得する。
+ローカルだけの設定ファイルはGit経由のCloudflareビルドに渡らない。`/api` のまま公開すると、
+ログインPOSTが静的配信先で405となる。再発防止のため、相対URLではビルドを止める。
+Cloud Runの認証APIが公開済みであることを上記チェックで確認した後、Cloudflareへ反映する。
+対象Google Cloudプロジェクトは `uttc-c10-oki-hashimoto-21b40e`。
+本番DBの状態確認・バックアップ・移行前に、新しいコードを公開へ反映しない。
 
 ## T3-2 画像付き出品
 
