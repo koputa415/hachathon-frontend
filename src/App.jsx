@@ -7,7 +7,6 @@ import Home from './pages/Home.jsx'
 import ItemDetail from './pages/ItemDetail.jsx'
 import ListingForm from './pages/ListingForm.jsx'
 import Login from './pages/Login.jsx'
-import { hobbyCategories } from './utils/hobbyCategories.js'
 import './App.css'
 
 export default function App() {
@@ -54,7 +53,7 @@ export default function App() {
     content = <Home onOpenItem={(id) => navigate(`#/items/${id}`)} />
   } else if (path === '#/listing') {
     currentId = 'listing'
-    content = <ListingForm key={auth.user.id} categories={hobbyCategories} onRequireAuth={() => requireAuth(path)} />
+    content = <ListingForm key={auth.user.id} onRequireAuth={() => requireAuth(path)} />
   } else {
     const match = path.match(/^#\/items\/([1-9]\d*)$/)
     content = match ? (

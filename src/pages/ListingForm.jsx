@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button, ItemCard } from '../components/index.js'
 import { createItem } from '../api/items.js'
+import { useHobbyClusters } from '../hooks/useHobbyClusters.js'
 import './pages.css'
 
 const maxImageSize = 5 * 1024 * 1024
 const imageTypes = ['image/jpeg', 'image/png', 'image/webp']
 
-export default function ListingForm({ categories, onRequireAuth }) {
+export default function ListingForm({ onRequireAuth }) {
+  const catalog = useHobbyClusters()
   const [image, setImage] = useState(null)
   const [imagePreview, setImagePreview] = useState('')
   const [pending, setPending] = useState(false)
@@ -52,7 +54,7 @@ export default function ListingForm({ categories, onRequireAuth }) {
 
   async function handleSubmit(event) {
     event.preventDefault()
-    if (submitting.current || !onRequireAuth()) return
+    if (submitting.current || catalog.loading || catalog.error || !onRequireAuth()) return
     const form = event.currentTarget
     for (const name of ['title', 'description']) {
       const field = form.elements.namedItem(name)
@@ -132,10 +134,15 @@ export default function ListingForm({ categories, onRequireAuth }) {
             </div>
             <div className="form-field">
               <label htmlFor="listing-category">カテゴリ（趣味）</label>
-              <select id="listing-category" name="category" required defaultValue="" {...fieldProps('category')}>
+              <select id="listing-category" name="category" required defaultValue="" disabled={catalog.loading || Boolean(catalog.error)} {...fieldProps('category')}>
                 <option value="" disabled>選んでください</option>
-                {categories.map((category) => <option key={category}>{category}</option>)}
+                {catalog.clusters.map((cluster) => <option key={cluster.id} value={cluster.name}>{cluster.name}</option>)}
               </select>
+              {catalog.loading && <p role="status">カテゴリを読み込んでいます…</p>}
+              {catalog.error && <div className="page-error page-stack" role="alert">
+                <p>{catalog.error}</p>
+                <Button variant="secondary" onClick={catalog.retry}>カテゴリを再取得</Button>
+              </div>}
               {fieldError('category')}
             </div>
             <div className="form-field">
@@ -161,7 +168,7 @@ export default function ListingForm({ categories, onRequireAuth }) {
               }} />}
             </div>
             <div className="page-actions">
-              <Button type="submit">{pending ? '出品しています…' : '出品する'}</Button>
+              <Button type="submit" disabled={catalog.loading || Boolean(catalog.error)}>{pending ? '出品しています…' : '出品する'}</Button>
               <Button type="reset" variant="secondary">入力をクリア</Button>
             </div>
           </fieldset>

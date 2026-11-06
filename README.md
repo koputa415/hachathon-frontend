@@ -38,7 +38,8 @@ If you are developing a production application, we recommend using TypeScript wi
 | `src/pages/ItemDetail.jsx` | 商品IDごとのAPI取得・再試行・404表示。購入入口は既存の認証導線を維持。 | items API・ItemCard・Button。 |
 | `src/pages/ListingForm.jsx` | 認証必須の商品・画像入力、ファイル検証、実出品送信、保存完了とエラー表示。 | items API・ItemCard・Button・theme。 |
 | `src/utils/itemPresentation.js` | APIの商品を共通カードの表示項目へ整形する純粋関数。 | ItemCard・Home・ItemDetail。 |
-| `src/utils/hobbyCategories.js` | 第0部で定義された5趣味の選択肢。商品データは置かない。 | 出品フォーム。 |
+| `src/api/hobbyClusters.js` | APIからカテゴリ一覧を取得・応答検証する。 | カテゴリ用フック。 |
+| `src/hooks/useHobbyClusters.js` | カテゴリの読込・失敗・再試行を共通管理する。 | 出品・一覧画面。 |
 | `src/pages/pages.css` | 画面のカード配置・フォーム・余白の共通スタイル。 | theme のトークン。 |
 | `src/pages/Login.jsx` | トークンと共通Buttonによる登録・ログイン。入力パスワードを保持しない。 | hooksの認証操作。 |
 | `src/api/client.js` | 環境別のAPI接続・Bearerヘッダー・安全なエラー表示。 | VITE_API_BASE_URL。 |
@@ -235,3 +236,13 @@ ITEMS_E2E_ALLOW_WRITES=1 ITEMS_E2E_BASE_URL=http://localhost:5182 npm run test:i
 既存の `npm run test:auth` は固定IDを使わず、実APIで閲覧用フィクスチャを作成する。
 ローカル検証では一覧→詳細→再読み込み・画像表示・追加読み込み・未ログイン閲覧・404と再試行を確認済み。
 バックエンドの認証・出品・画像・取得を含むpytestは146件成功。
+
+
+## T3-2 カテゴリをAPIから取得
+
+出品カテゴリは `GET /hobby-clusters` の選択肢をそのまま表示し、出品者が選ぶ。
+「その他」も同じ選択肢。画面にはカテゴリの一覧を直書きしない。
+取得中や失敗時は送信できず、再試行できる。入力済みの商品情報は保持する。
+バックエンドのカテゴリ管理追加を先に反映する必要がある。
+
+検証：出品ブラウザテストはカテゴリ取得障害・再試行・API由来の追加選択肢・その他の画像付き保存も対象にする。
