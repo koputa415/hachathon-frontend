@@ -29,9 +29,9 @@ async function run() {
   const listingTitle = () => page.getByRole('heading', { name: '道具を出品する', exact: true })
   const privateField = () => page.getByLabel('商品名', { exact: true })
   const stored = () => page.evaluate(key => sessionStorage.getItem(key), storageKey)
-  async function fillLogin() {
-    await page.getByLabel('メールアドレス', { exact: true }).fill(email)
-    await page.getByLabel('パスワード', { exact: true }).fill(password)
+  async function fillLogin(loginEmail = email, loginPassword = password) {
+    await page.getByLabel('メールアドレス', { exact: true }).fill(loginEmail)
+    await page.getByLabel('パスワード', { exact: true }).fill(loginPassword)
     await page.getByRole('button', { name: 'ログインして続ける', exact: true }).click()
   }
   async function signOut() {
@@ -124,6 +124,35 @@ async function run() {
     await page.getByRole('button', { name: '履歴を取得', exact: true }).click()
     assert.equal((await historyRequest).headers().authorization?.startsWith('Bearer '), true)
     await page.getByText('履歴は0件です', { exact: true }).waitFor()
+    let releaseOldHistory
+    let completeOldHistory
+    const oldGate = new Promise(resolve => { releaseOldHistory = resolve })
+    const oldCompleted = new Promise(resolve => { completeOldHistory = resolve })
+    await page.route('**/api/chats', async route => {
+      await oldGate
+      try {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ id: 1, question: 'previous-account-private', answer: 'must not appear' }]) })
+      } catch { /* ログアウトで中断されたリクエストは配信しない。 */ }
+      finally { completeOldHistory() }
+    }, { times: 1 })
+    const oldRequest = page.waitForRequest(request => request.url().endsWith('/api/chats'))
+    await page.getByRole('button', { name: '履歴を取得', exact: true }).click()
+    await oldRequest
+    await signOut()
+    await page.goto(`${base}/#/login?next=${encodeURIComponent('#/chat-history')}`)
+    await loginTitle().waitFor()
+    await page.getByRole('button', { name: '新規登録に切り替える' }).click()
+    await page.getByLabel('表示名', { exact: true }).fill(`別アカウント-${suffix}`)
+    await page.getByLabel('メールアドレス', { exact: true }).fill(`other-${email}`)
+    await page.getByLabel('パスワード（8〜128文字）', { exact: true }).fill(password)
+    await page.getByRole('button', { name: '登録して続ける', exact: true }).click()
+    await page.getByRole('heading', { name: 'AIチャットの履歴', exact: true }).waitFor()
+    releaseOldHistory()
+    await oldCompleted
+    await page.getByRole('button', { name: '履歴を取得', exact: true }).click()
+    await page.getByText('履歴は0件です', { exact: true }).waitFor()
+    assert.equal(await page.getByText('previous-account-private', { exact: true }).count(), 0)
+    checks.push('別アカウントに切り替えた後、遅れて届く前のアカウントの履歴を表示しない')
     await page.route('**/api/chats', route => route.fulfill({ status: 401, contentType: 'application/json', body: '{"detail":"Invalid credentials"}' }))
     await page.getByRole('button', { name: '履歴を取得', exact: true }).click()
     await loginTitle().waitFor()

@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { BottomNav, Button, Header } from './components/index.js'
 import { useAuth } from './hooks/useAuth.js'
+import { useHashRoute } from './hooks/useHashRoute.js'
 import { loginHash, loginReturnTo } from './utils/authRedirect.js'
 import Home from './pages/Home.jsx'
 import ItemDetail from './pages/ItemDetail.jsx'
@@ -11,12 +12,7 @@ import { demoItems, hobbyCategories } from './pages/demoData.js'
 import './App.css'
 
 export default function App() {
-  const [route, setRoute] = useState(() => window.location.hash || '#/')
-  const navigate = useCallback((hash, replace = false) => {
-    if (replace) window.history.replaceState(null, '', hash)
-    else window.location.hash = hash
-    setRoute(hash)
-  }, [])
+  const [route, navigate] = useHashRoute()
   const auth = useAuth()
   const path = route.split('?')[0]
   const protectedRoute = path === '#/listing' || path === '#/chat-history'
@@ -27,12 +23,6 @@ export default function App() {
     { id: 'history', label: 'チャット履歴', href: '#/chat-history' },
     ...(!auth.isAuthenticated ? [{ id: 'login', label: 'ログイン', href: '#/login' }] : []),
   ]
-
-  useEffect(() => {
-    const updateRoute = () => setRoute(window.location.hash || '#/')
-    window.addEventListener('hashchange', updateRoute)
-    return () => window.removeEventListener('hashchange', updateRoute)
-  }, [])
 
   useEffect(() => {
     document.getElementById('page-content')?.focus()

@@ -10,9 +10,11 @@ export class ApiError extends Error {
 
 export async function apiRequest(path, { method = 'GET', body, token, signal } = {}) {
   let response
+  const timeout = AbortSignal.timeout(15000)
+  const requestSignal = signal ? AbortSignal.any([signal, timeout]) : timeout
   try {
     response = await fetch(`${apiBase}${path}`, {
-      method, signal, cache: 'no-store', credentials: 'omit',
+      method, signal: requestSignal, cache: 'no-store', credentials: 'omit',
       headers: {
         Accept: 'application/json',
         ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
