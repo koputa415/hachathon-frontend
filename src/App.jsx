@@ -1,90 +1,68 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { BottomNav, Button, Header } from './components/index.js'
+import Home from './pages/Home.jsx'
+import ItemDetail from './pages/ItemDetail.jsx'
+import ListingForm from './pages/ListingForm.jsx'
+import ChatHistory from './pages/ChatHistory.jsx'
+import { demoItems, hobbyCategories } from './pages/demoData.js'
 import './App.css'
 
-const API_URL =
-  'https://curriculum-10-oki-hashimoto-6taoulgp3q-uc.a.run.app'
+const navItems = [
+  { id: 'home', label: 'ホーム', href: '#/' },
+  { id: 'listing', label: '出品', href: '#/listing' },
+  { id: 'history', label: 'チャット履歴', href: '#/chat-history' },
+]
 
-function App() {
-  const [history, setHistory] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState('')
-  const [error, setError] = useState('')
+function navigate(hash) {
+  window.location.hash = hash
+}
 
-  // FastAPIから、DBに保存されている履歴を取得する
-  const getHistory = async () => {
-    setLoading(true)
-    setMessage('')
-    setError('')
+export default function App() {
+  const [route, setRoute] = useState(() => window.location.hash || '#/')
 
-    try {
-      const response = await fetch(`${API_URL}/chats`)
+  useEffect(() => {
+    const updateRoute = () => setRoute(window.location.hash || '#/')
+    window.addEventListener('hashchange', updateRoute)
+    return () => window.removeEventListener('hashchange', updateRoute)
+  }, [])
 
-      if (!response.ok) {
-        throw new Error(`履歴の取得に失敗しました：HTTP ${response.status}`)
-      }
+  useEffect(() => {
+    document.getElementById('page-content')?.focus()
+    window.scrollTo(0, 0)
+  }, [route])
 
-      const data = await response.json()
-
-      if (!Array.isArray(data)) {
-        throw new Error('受け取ったデータが想定した形式ではありません')
-      }
-
-      setHistory(data)
-      setMessage(`接続成功！ 履歴は${data.length}件です`)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
-    } finally {
-      setLoading(false)
-    }
+  let content
+  let currentId
+  if (route === '#/') {
+    currentId = 'home'
+    content = <Home items={demoItems} onOpenItem={(id) => navigate(`#/items/${id}`)} />
+  } else if (route === '#/listing') {
+    currentId = 'listing'
+    content = <ListingForm categories={hobbyCategories} />
+  } else if (route === '#/chat-history') {
+    currentId = 'history'
+    content = <ChatHistory />
+  } else {
+    const item = demoItems.find((candidate) => route === `#/items/${candidate.id}`)
+    content = item ? (
+      <ItemDetail key={item.id} item={item} onShowListing={() => navigate('#/listing')} />
+    ) : (
+      <div className="page-stack"><h1>ページが見つかりません</h1><a className="page-link" href="#/">ホームに戻る</a></div>
+    )
   }
 
   return (
-    <main>
-      <h1>AIチャットの履歴</h1>
-      <p>CloudflareからFastAPIに接続して、履歴を取得します。</p>
-
-      <button
-        type="button"
-        onClick={getHistory}
-        disabled={loading}
-      >
-        {loading ? '取得中…' : '履歴を取得'}
-      </button>
-
-      {message && <p role="status">{message}</p>}
-
-      {error && (
-        <p role="alert" style={{ color: 'crimson' }}>
-          {error}
-        </p>
-      )}
-
-      <section aria-label="チャット履歴">
-        {history.map((chat) => (
-          <article
-            key={chat.id}
-            style={{
-              border: '1px solid #888',
-              borderRadius: '8px',
-              padding: '16px',
-              marginTop: '16px',
-              textAlign: 'left',
-            }}
-          >
-            <h2>質問</h2>
-            <p style={{ whiteSpace: 'pre-wrap' }}>
-              {chat.question}
-            </p>
-
-            <h2>回答</h2>
-            <p style={{ whiteSpace: 'pre-wrap' }}>
-              {chat.answer}
-            </p>
-          </article>
-        ))}
-      </section>
-    </main>
+    <div className="app-shell">
+      <a className="skip-link" href="#page-content" onClick={(event) => {
+        event.preventDefault()
+        document.getElementById('page-content')?.focus()
+      }}>本文へ移動</a>
+      <Header homeHref="#/">
+        <Button variant="secondary" onClick={() => navigate('#/listing')}>出品する</Button>
+      </Header>
+      {route !== '#/chat-history' && <p className="app-sample-note">サンプル表示：商品・おすすめ・出品フォームは表示確認用です。</p>}
+      <main className="app-main" id="page-content" tabIndex={-1}>{content}</main>
+      <BottomNav items={navItems} currentId={currentId} />
+    </div>
   )
 }
-
-export default App

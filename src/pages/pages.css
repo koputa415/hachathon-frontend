@@ -1,0 +1,60 @@
+.page-stack { display: grid; gap: var(--space-4); }
+.page-muted { color: var(--color-text-secondary); }
+.page-link { color: var(--color-primary); text-underline-offset: var(--space-1); }
+.page-panel {
+  padding: var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+.page-notice,
+.page-error {
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+}
+.page-preserve-lines { white-space: pre-wrap; overflow-wrap: anywhere; }
+.item-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); }
+.detail-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-6); align-items: start; }
+.detail-facts { display: grid; gap: var(--space-4); margin: var(--space-0); }
+.detail-facts div { display: grid; gap: var(--space-1); }
+.detail-facts dt { color: var(--color-text-secondary); font-size: 0.875rem; }
+.detail-facts dd { margin: var(--space-0); }
+.page-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.listing-form { max-width: 680px; }
+.form-field { display: grid; gap: var(--space-2); font-weight: 600; }
+.form-field input,
+.form-field select,
+.form-field textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-button);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 400;
+}
+.form-field input::placeholder,
+.form-field textarea::placeholder { color: var(--color-text-muted); opacity: 1; }
+.form-field textarea { resize: vertical; }
+.form-field :is(input, select, textarea):focus-visible,
+.page-link:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: var(--space-1);
+}
+.listing-preview { max-width: 360px; }
+@media (max-width: 760px) {
+  .item-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .detail-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 480px) {
+  .item-grid { grid-template-columns: minmax(0, 1fr); }
+  .page-panel { padding: var(--space-4); }
+}
