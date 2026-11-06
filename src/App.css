@@ -35,3 +35,13 @@
   .app-main { padding: var(--space-6) var(--space-4); }
   .app-sample-note { padding: var(--space-3) var(--space-4); }
 }
+
+.app-user-name { max-width: 16rem; overflow-wrap: anywhere; color: var(--color-text-secondary); }
+.app-auth-feedback {
+  margin: var(--space-4) var(--space-6) var(--space-0);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  color: var(--color-text);
+}

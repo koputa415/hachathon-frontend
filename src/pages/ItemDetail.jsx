@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Button, ItemCard } from '../components/index.js'
 import './pages.css'
 
-export default function ItemDetail({ item, onShowListing }) {
+export default function ItemDetail({ item, onShowListing, onRequirePurchase }) {
   const [message, setMessage] = useState('')
 
   return (
@@ -21,7 +21,9 @@ export default function ItemDetail({ item, onShowListing }) {
             <div><dt>趣味</dt><dd>{item.categoryLabel}</dd></div>
             <div><dt>商品の状態</dt><dd>{item.condition}</dd></div>
           </dl>
-          <Button disabled={item.status !== 'available'} onClick={() => setMessage('サンプル表示のため、購入手続きは行いません。')}>
+          <Button disabled={item.status !== 'available'} onClick={() => {
+            if (onRequirePurchase()) setMessage('サンプル表示のため、購入手続きは行いません。')
+          }}>
             {item.status === 'available' ? '購入手続きへ' : '売却済み'}
           </Button>
           <Button variant="secondary" onClick={onShowListing}>自分の道具も出品する</Button>

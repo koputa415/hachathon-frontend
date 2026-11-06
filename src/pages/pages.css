@@ -58,3 +58,7 @@
   .item-grid { grid-template-columns: minmax(0, 1fr); }
   .page-panel { padding: var(--space-4); }
 }
+
+.auth-page { max-width: 560px; margin: var(--space-0) auto; }
+.auth-fields { min-width: 0; margin: var(--space-0); padding: var(--space-0); border: none; }
+.auth-legend { margin-bottom: var(--space-4); color: var(--color-text-secondary); font-weight: 600; }

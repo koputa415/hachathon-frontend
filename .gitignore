@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# 環境依存の設定・認証テスト成果物
+.env
+.env.*
+!.env.example
+test-results/

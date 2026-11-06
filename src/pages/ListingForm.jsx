@@ -2,11 +2,12 @@ import { useState } from 'react'
 import { Button, ItemCard } from '../components/index.js'
 import './pages.css'
 
-export default function ListingForm({ categories }) {
+export default function ListingForm({ categories, onRequireAuth }) {
   const [preview, setPreview] = useState(null)
 
   function handleSubmit(event) {
     event.preventDefault()
+    if (!onRequireAuth()) return
     for (const name of ['title', 'description']) {
       const field = event.currentTarget.elements.namedItem(name)
       if (!field.value.trim()) {
