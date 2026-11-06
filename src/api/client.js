@@ -32,6 +32,12 @@ export async function apiRequest(path, { method = 'GET', body, token, signal } =
   const configurationMessage = '認証サービスに接続できません。公開設定の確認が必要です。'
   if (!response.ok) {
     if (path.startsWith('/items')) {
+      if (method === 'GET') {
+        const message = response.status === 404 ? '商品が見つかりません。'
+          : response.status === 405 ? '商品データに接続できません。APIの公開設定を確認してください。'
+          : '商品を取得できませんでした。時間をおいて、もう一度お試しください。'
+        throw new ApiError(response.status, message)
+      }
       let issues = []
       if (response.status === 422) {
         try {

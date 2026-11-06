@@ -33,11 +33,12 @@ If you are developing a production application, we recommend using TypeScript wi
 | `src/App.jsx` | ハッシュ URL に応じた画面切り替えと、共通ヘッダー・下部ナビ。 | pages・components。 |
 | `src/App.css` | アプリ全体の配置とスキップリンク。 | theme のトークン。 |
 | `src/index.css` | トークンを読み込む全体の基本スタイル。 | theme のトークン。 |
-| `src/pages/Home.jsx` | 仮商品一覧と理由付きの未体験趣味の目玉カード。 | ItemCard・Button。 |
+| `src/pages/Home.jsx` | 公開APIの商品一覧・追加読み込み・空とエラー表示・最新出品への導線。 | items API・ItemCard・Button。 |
 | `src/pages/Home.css` | ホーム専用目玉カード。コーラルを3用途に限定する。 | theme のトークン。 |
-| `src/pages/ItemDetail.jsx` | 仮商品の詳細・状態・購入ボタンの表示確認。 | ItemCard・Button。 |
+| `src/pages/ItemDetail.jsx` | 商品IDごとのAPI取得・再試行・404表示。購入入口は既存の認証導線を維持。 | items API・ItemCard・Button。 |
 | `src/pages/ListingForm.jsx` | 認証必須の商品・画像入力、ファイル検証、実出品送信、保存完了とエラー表示。 | items API・ItemCard・Button・theme。 |
-| `src/pages/demoData.js` | 5趣味クラスタの表示確認用商品データ。 | 画面側のみ。 |
+| `src/utils/itemPresentation.js` | APIの商品を共通カードの表示項目へ整形する純粋関数。 | ItemCard・Home・ItemDetail。 |
+| `src/utils/hobbyCategories.js` | 第0部で定義された5趣味の選択肢。商品データは置かない。 | 出品フォーム。 |
 | `src/pages/pages.css` | 画面のカード配置・フォーム・余白の共通スタイル。 | theme のトークン。 |
 | `src/pages/Login.jsx` | トークンと共通Buttonによる登録・ログイン。入力パスワードを保持しない。 | hooksの認証操作。 |
 | `src/api/client.js` | 環境別のAPI接続・Bearerヘッダー・安全なエラー表示。 | VITE_API_BASE_URL。 |
@@ -50,6 +51,7 @@ If you are developing a production application, we recommend using TypeScript wi
 | `.env.production` | 本番ビルドの公開API接続先。秘密値は置かず環境変数で上書き可能。 | Vite。 |
 | `scripts/check-auth-api.mjs` | 公開OpenAPIに登録・ログイン・本人確認があることをGETだけで確認する。 | 本番反映前チェック。 |
 | `.env.example` | 秘密値を含まないAPI設定名の見本。 | Vite。 |
+| `tests/items.e2e.cjs` | 実出品から一覧・詳細・再読み込み・ページング・空とエラー表示まで検証。 | 実API・分離DB・Playwright。 |
 | `tests/listing.e2e.cjs` | 実APIの画像付き出品・画像再取得・入力とサーバーエラー・二重送信抑止・401のブラウザーテスト。 | Playwright・分離DB・GCSエミュレーター。 |
 | `tests/auth.e2e.cjs` | 実APIでの登録・ログイン・再読み込み・保護導線と異常系のブラウザーテスト。 | Playwright（開発依存）。 |
 
@@ -86,14 +88,13 @@ import { Button, ItemCard, Header, BottomNav, StatusBadge } from './components'
 
 | URL | 画面 |
 | --- | --- |
-| `/#/` | ホーム（仮データの商品5件と、理由付きの「まだ知らない趣味」目玉カード） |
-| `/#/items/1` | 販売中の商品詳細 |
-| `/#/items/2` | 売却済みの商品詳細（購入ボタン無効） |
+| `/#/` | DB由来の商品一覧と最新出品への導線 |
+| `/#/items/<商品ID>` | DBから取得した商品の詳細。存在しなければ404表示 |
 | `/#/listing` | ログイン後の出品フォーム。商品と画像をAPIに保存する |
 | `/#/login` | 登録・ログイン画面 |
 
 現在の元コードには3画面がなかったため、T1-3 では仮データの3画面を新規作成した。
-アプリ名は未定のプレースホルダー。購入・出品・推薦の API 連携はこのタスクでは行わない。
+アプリ名は未定のプレースホルダー。T3-2で出品、T3-3で一覧・詳細をAPIへ接続済み。購入処理は後続タスク。
 共通の Header / BottomNav に加え、各画面で Button / ItemCard を使用する。
 コーラルの参照は `src/pages/Home.css` の目玉カード上部ライン・チップ・CTA のみ。
 
@@ -182,12 +183,12 @@ Bearer JWTは認証セッションから送信直前に取得し、画面にト�
 - ホームの商品一覧・詳細は引き続き仮データで、今回の保存結果はそこへ自動追加しない。
 
 画像保存にはバックエンドのT3-2対応版が必要。
-Cloud Storageバケットは現時点で未作成のため、公開環境では先に非公開バケットを用意し、
+公開環境では非公開のCloud Storageバケットを用意し、
 Cloud Runへ `ITEM_IMAGES_BUCKET` と `GOOGLE_CLOUD_PROJECT` を設定する。
 Cloud Run実行サービスアカウントに当該バケットの画像作成・取得・削除権限を付ける。
 フロントにStorage認証情報を置かず、画像はAPIの `/items/{id}/image` 経由で表示する。
 バックエンドの `cd/docs/item-images.md` に設定・API・確認手順を記載した。
-本番バケットの作成・権限変更・デプロイは今回実行していない。
+T3-2実装後にユーザーがCloud Storageを設定済み。今回のT3-3ではバケット・権限・本番環境を変更しない。
 
 ### 出品ブラウザーテスト
 
@@ -203,3 +204,34 @@ LISTING_E2E_ALLOW_WRITES=1 LISTING_E2E_BASE_URL=http://localhost:5181 npm run te
 実APIでの出品201、入力422、画像の再取得、障害表示、二重submit抑止、401導線、375px幅を検証する。
 サーバー障害・通信失敗・401のみネットワーク差し替えで再現する。
 実GCSのIAM・本番バケットへのアップロードはローカルエミュレーターの検証には含まれない。
+
+## T3-3 商品一覧と商品詳細
+
+- ホームは公開 `GET /items?limit=24` から新しい出品順に表示する。
+- 「もっと見る」は応答の `next_cursor` を `before_id` として送り、残りの商品を追加する。
+- 商品リンクは `/#/items/<ID>` を開き、公開 `GET /items/<ID>` から詳細を取得する。
+- 画像は `image_path` がある場合だけ既存の画像APIから表示する。画像なしの商品も一覧・詳細へ表示する。
+- ブラウザの再読み込みでも改めてGETし、固定の商品や前回の保存データには置き換えない。
+- 読み込み中・空の一覧・通信失敗と再試行・商品404を表示する。
+- ホーム上部の導線は取得した最新出品を使う。過去の仮データにあった固定の趣味嗜好や商品IDに依存しない。
+
+`src/pages/demoData.js` を削除し、5趣味の選択肢だけを `src/utils/hobbyCategories.js` に移した。
+商品名・説明・カテゴリ・状態・価格・画像はAPIに由来する。
+販売ステータスの変更と購入処理は後続タスクで、現段階の出品は既存の販売中表示を使う。
+コンポーネント専用の `components-preview.html` では引き続き仮データを利用できる。
+
+### 検証
+
+取得APIを追加したバックエンドのT3-3対応版と、使い捨てDB・GCSエミュレーターを用意する。
+既存の認証・出品APIの入出力は維持している。公開反映はバックエンド、フロントの順に行う。
+
+```sh
+ITEMS_E2E_ALLOW_WRITES=1 ITEMS_E2E_BASE_URL=http://localhost:5182 npm run test:items
+```
+
+テストは実際に登録・ページング用商品25件・ブラウザからの画像付き出品を行うため、
+通常のプレビューとは別の使い捨てDBを使う。`ITEMS_E2E_OUTPUT_DIR` で結果と画像の出力先を指定できる。
+成功系は実APIで、空の一覧・通信失敗・サーバー障害だけをブラウザ側で差し替える。
+既存の `npm run test:auth` は固定IDを使わず、実APIで閲覧用フィクスチャを作成する。
+ローカル検証では一覧→詳細→再読み込み・画像表示・追加読み込み・未ログイン閲覧・404と再試行を確認済み。
+バックエンドの認証・出品・画像・取得を含むpytestは146件成功。

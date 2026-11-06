@@ -43,6 +43,17 @@ async function run() {
     await page.getByRole('heading', { name: 'まだ知らない趣味に、気軽に出会える。', exact: true }).waitFor()
   }
   try {
+    // 商品IDの固定値に依存せず、実APIで閲覧用の商品を用意する。
+    const fixtureAccountResponse = await context.request.post(`${base}/api/auth/register`, { data: {
+      email: `fixture-${suffix}@example.com`, display_name: '閲覧フィクスチャ', password,
+    } })
+    assert.equal(fixtureAccountResponse.status(), 201)
+    const fixtureAccount = await fixtureAccountResponse.json()
+    const fixtureItemResponse = await context.request.post(`${base}/api/items`, { data: {
+      title: `認証導線用カメラ-${suffix}`, description: '認証テスト用の出品です。', category: 'カメラ', condition: '未使用に近い', price: 12000,
+    }, headers: { Authorization: `Bearer ${fixtureAccount.access_token}` } })
+    assert.equal(fixtureItemResponse.status(), 201)
+    const fixtureItem = await fixtureItemResponse.json()
     await page.goto(`${base}/#/`)
     await page.getByRole('heading', { name: 'まだ知らない趣味に、気軽に出会える。', exact: true }).waitFor()
     assert.equal(await page.getByRole('link', { name: 'チャット履歴', exact: true }).count(), 0)
@@ -55,7 +66,7 @@ async function run() {
     assert.match(page.url(), /#\/login\?next=/)
     checks.push('未ログインの出品URLをログインへ誘導し、フォームを描画しない')
 
-    await page.goto(`${base}/#/items/1`)
+    await page.goto(`${base}/#/items/${fixtureItem.id}`)
     await page.getByRole('button', { name: '購入手続きへ', exact: true }).click()
     await loginTitle().waitFor()
     assert.equal(await page.getByText('サンプル表示のため、購入手続きは行いません。', { exact: true }).count(), 0)

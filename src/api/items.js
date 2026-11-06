@@ -1,4 +1,4 @@
-import { ApiError, apiUrl } from './client.js'
+import { ApiError, apiRequest, apiUrl } from './client.js'
 import { authenticatedRequest } from './session.js'
 
 const fieldMessages = {
@@ -29,4 +29,31 @@ export async function createItem(fields, image, signal) {
     }
     throw error
   }
+}
+
+
+function readItem(item) {
+  if (!item || !Number.isSafeInteger(item.id) || item.id <= 0
+    || typeof item.title !== 'string' || typeof item.description !== 'string'
+    || typeof item.category !== 'string' || typeof item.condition !== 'string'
+    || !Number.isSafeInteger(item.price) || item.price < 1
+    || (item.image_path !== null && item.image_path !== `/items/${item.id}/image`)) {
+    throw new ApiError(0, '商品データを確認できませんでした。もう一度お試しください。')
+  }
+  return { ...item, imageUrl: item.image_path ? apiUrl(item.image_path) : null }
+}
+
+export async function listItems(cursor, signal) {
+  const query = new URLSearchParams({ limit: '24' })
+  if (cursor !== null) query.set('before_id', String(cursor))
+  const page = await apiRequest(`/items?${query}`, { signal })
+  if (!page || !Array.isArray(page.items)
+    || (page.next_cursor !== null && (!Number.isSafeInteger(page.next_cursor) || page.next_cursor <= 0))) {
+    throw new ApiError(0, '商品一覧を確認できませんでした。もう一度お試しください。')
+  }
+  return { items: page.items.map(readItem), nextCursor: page.next_cursor }
+}
+
+export async function getItem(id, signal) {
+  return readItem(await apiRequest(`/items/${encodeURIComponent(id)}`, { signal }))
 }

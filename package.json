@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test:auth": "node tests/auth.e2e.cjs",
     "check:auth-api": "node scripts/check-auth-api.mjs",
-    "test:listing": "node tests/listing.e2e.cjs"
+    "test:listing": "node tests/listing.e2e.cjs",
+    "test:items": "node tests/items.e2e.cjs"
   },
   "dependencies": {
     "react": "^19.3.1",

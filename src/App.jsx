@@ -7,7 +7,7 @@ import Home from './pages/Home.jsx'
 import ItemDetail from './pages/ItemDetail.jsx'
 import ListingForm from './pages/ListingForm.jsx'
 import Login from './pages/Login.jsx'
-import { demoItems, hobbyCategories } from './pages/demoData.js'
+import { hobbyCategories } from './utils/hobbyCategories.js'
 import './App.css'
 
 export default function App() {
@@ -51,14 +51,14 @@ export default function App() {
       : <Login key={protectedRoute ? path : next} auth={auth} returnTo={protectedRoute ? path : next} />
   } else if (path === '#/') {
     currentId = 'home'
-    content = <Home items={demoItems} onOpenItem={(id) => navigate(`#/items/${id}`)} />
+    content = <Home onOpenItem={(id) => navigate(`#/items/${id}`)} />
   } else if (path === '#/listing') {
     currentId = 'listing'
     content = <ListingForm key={auth.user.id} categories={hobbyCategories} onRequireAuth={() => requireAuth(path)} />
   } else {
-    const item = demoItems.find((candidate) => path === `#/items/${candidate.id}`)
-    content = item ? (
-      <ItemDetail key={`${item.id}-${auth.user?.id || 'guest'}`} item={item}
+    const match = path.match(/^#\/items\/([1-9]\d*)$/)
+    content = match ? (
+      <ItemDetail key={`${match[1]}-${auth.user?.id || 'guest'}`} itemId={match[1]}
         onRequirePurchase={() => requireAuth(path)} onShowListing={() => navigate('#/listing')} />
     ) : (
       <div className="page-stack"><h1>ページが見つかりません</h1><a className="page-link" href="#/">ホームに戻る</a></div>
@@ -82,7 +82,6 @@ export default function App() {
         <p>{auth.notice}</p>
         {auth.status === 'error' && <Button variant="secondary" onClick={() => { void auth.restoreSession() }}>再試行</Button>}
       </div>}
-      {path !== '#/login' && <p className="app-sample-note">サンプル表示：ホームの商品・おすすめは表示確認用です。</p>}
       <main className="app-main" id="page-content" tabIndex={-1}>{content}</main>
       <BottomNav items={navItems} currentId={currentId} />
     </div>
