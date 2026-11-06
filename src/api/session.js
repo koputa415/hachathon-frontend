@@ -1,4 +1,5 @@
 import { authenticate, getCurrentUser } from './auth.js'
+import { ApiError, apiRequest } from './client.js'
 
 const storageKey = 'hackathon.auth.session'
 const expiredMessage = 'ログインの有効期限が切れました。もう一度ログインしてください。'
@@ -120,3 +121,21 @@ export function subscribe(listener) {
   return () => listeners.delete(listener)
 }
 export const getSnapshot = () => snapshot
+
+
+// トークンを画面へ渡さず、送信直前の期限と遅れて届く別セッションの応答を確認する。
+export async function authenticatedRequest(path, options) {
+  if (!hasSession()) throw new ApiError(401, expiredMessage)
+  const candidate = session
+  const currentGeneration = generation
+  try {
+    const result = await apiRequest(path, { ...options, token: candidate.token })
+    if (currentGeneration !== generation || candidate !== session || !hasSession()) {
+      throw new DOMException('Session changed', 'AbortError')
+    }
+    return result
+  } catch (error) {
+    if (currentGeneration === generation && candidate === session && error.status === 401) logout(expiredMessage)
+    throw error
+  }
+}

@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test:auth": "node tests/auth.e2e.cjs"
+    "test:auth": "node tests/auth.e2e.cjs",
+    "test:listing": "node tests/listing.e2e.cjs"
   },
   "dependencies": {
     "react": "^19.3.1",

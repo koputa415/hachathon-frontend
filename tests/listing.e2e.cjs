@@ -1,0 +1,150 @@
+const assert = require('node:assert/strict')
+const fs = require('node:fs/promises')
+const path = require('node:path')
+const { randomBytes } = require('node:crypto')
+const { chromium } = require('playwright')
+
+const base = process.env.LISTING_E2E_BASE_URL || 'http://localhost:5181'
+if (!['localhost', '127.0.0.1', '[::1]'].includes(new URL(base).hostname)
+  || process.env.LISTING_E2E_ALLOW_WRITES !== '1') {
+  throw new Error('Use a local frontend with disposable DB and GCS emulator; set LISTING_E2E_ALLOW_WRITES=1')
+}
+const outputs = process.env.LISTING_E2E_OUTPUT_DIR || path.resolve('test-results/listing')
+const suffix = randomBytes(6).toString('hex')
+const email = `listing-${suffix}@example.com`
+const password = randomBytes(24).toString('base64url')
+const title = `ブラウザ出品確認-${suffix}`
+const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAMAAAACCAIAAAASFvFNAAAAFUlEQVR4nGPUCKhgYGBgYGBgYoABABDMAPTRO+Z7AAAAAElFTkSuQmCC', 'base64')
+const fixture = { name: 'camera.png', mimeType: 'image/png', buffer: png }
+
+async function run() {
+  await fs.mkdir(outputs, { recursive: true })
+  const browser = await chromium.launch({ headless: true, channel: process.env.PLAYWRIGHT_CHANNEL || undefined })
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+  const page = await context.newPage()
+  page.setDefaultTimeout(12000)
+  const errors = []
+  const checks = []
+  let posts = 0
+  page.on('pageerror', error => errors.push(error.message))
+  page.on('request', request => { if (request.method() === 'POST' && /\/items\/with-image$/.test(request.url())) posts += 1 })
+  const form = page.locator('form')
+  const submit = () => form.getByRole('button', { name: '出品する', exact: true })
+  const upload = () => page.getByLabel('商品画像', { exact: true })
+  async function fill() {
+    await page.getByLabel('商品名', { exact: true }).fill(title)
+    await page.getByLabel('商品の説明', { exact: true }).fill('動作確認済み。ブラウザからの保存確認です。')
+    await page.getByLabel('カテゴリ（趣味）', { exact: true }).selectOption('カメラ')
+    await page.getByLabel('商品の状態', { exact: true }).selectOption('未使用に近い')
+    await page.getByLabel('価格（円）', { exact: true }).fill('12000')
+    await upload().setInputFiles(fixture)
+    await page.getByAltText('選択した商品画像のプレビュー').waitFor()
+  }
+  try {
+    await page.goto(`${base}/#/listing`)
+    await page.getByRole('heading', { name: 'ログイン', exact: true }).waitFor()
+    assert.equal(await upload().count(), 0)
+    checks.push('未ログインでは出品フォームを表示しない')
+    await page.getByRole('button', { name: '新規登録に切り替える' }).click()
+    await page.getByLabel('表示名', { exact: true }).fill(`出品確認-${suffix}`)
+    await page.getByLabel('メールアドレス', { exact: true }).fill(email)
+    await page.getByLabel('パスワード（8〜128文字）', { exact: true }).fill(password)
+    await page.getByRole('button', { name: '登録して続ける', exact: true }).click()
+    await page.getByRole('heading', { name: '道具を出品する', exact: true }).waitFor()
+    await fill()
+
+    await page.getByLabel('価格（円）', { exact: true }).fill('0')
+    const before = posts
+    await submit().click()
+    assert.equal(await page.getByLabel('価格（円）', { exact: true }).evaluate(input => input.validity.rangeUnderflow), true)
+    assert.equal(posts, before)
+    await page.getByLabel('価格（円）', { exact: true }).fill('12000')
+    await upload().setInputFiles({ name: 'text.txt', mimeType: 'text/plain', buffer: Buffer.from('not image') })
+    await page.getByText('JPEG・PNG・WebP形式の画像を選んでください。', { exact: true }).waitFor()
+    await submit().click()
+    assert.equal(posts, before)
+    await upload().setInputFiles({ name: 'large.png', mimeType: 'image/png', buffer: Buffer.alloc(5 * 1024 * 1024 + 1) })
+    await page.getByText('画像は5MB以下のファイルを選んでください。', { exact: true }).waitFor()
+    await upload().setInputFiles(fixture)
+    checks.push('不正価格・非画像・5MB超過を送信前に理由付きで拒否する')
+
+    await page.route('**/api/items/with-image', async route => {
+      const original = route.request().postDataBuffer()
+      const target = Buffer.from('"price":12000')
+      const index = original.indexOf(target)
+      assert.notEqual(index, -1)
+      await route.continue({ postData: Buffer.concat([original.subarray(0, index), Buffer.from('"price":0'), original.subarray(index + target.length)]) })
+    })
+    await submit().click()
+    await page.getByRole('alert').filter({ hasText: '入力内容を確認' }).waitFor()
+    await page.getByText('価格は1〜999999999円の整数で入力してください。', { exact: true }).waitFor()
+    assert.equal(await page.getByLabel('価格（円）', { exact: true }).getAttribute('aria-invalid'), 'true')
+    assert.equal(await page.getByLabel('商品名', { exact: true }).inputValue(), title)
+    await page.unroute('**/api/items/with-image')
+    checks.push('実APIの422を項目別の理由として表示し、入力と画像を保持する')
+
+    await page.route('**/api/items/with-image', route => route.fulfill({ status: 503, contentType: 'application/json', body: '{"detail":"Image storage is unavailable"}' }))
+    await submit().click()
+    await page.getByRole('alert').filter({ hasText: '画像の保存先に接続できませんでした' }).waitFor()
+    assert.equal(await page.getByRole('heading', { name: '出品が完了しました' }).count(), 0)
+    await page.unroute('**/api/items/with-image')
+    await page.route('**/api/items/with-image', route => route.abort('failed'))
+    await submit().click()
+    await page.getByRole('alert').filter({ hasText: '通信環境を確認' }).waitFor()
+    await page.unroute('**/api/items/with-image')
+    checks.push('保存先障害と通信失敗を理由付きで表示し、完了扱いにせず再試行できる')
+
+    await page.setViewportSize({ width: 375, height: 812 })
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false)
+    await page.screenshot({ path: path.join(outputs, 'listing-form-mobile.png'), fullPage: true })
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await page.route('**/api/items/with-image', async route => {
+      await new Promise(resolve => setTimeout(resolve, 300))
+      await route.continue()
+    })
+    const count = posts
+    const responsePromise = page.waitForResponse(response => /\/items\/with-image$/.test(response.url()) && response.status() === 201)
+    await submit().click()
+    await form.evaluate(element => { element.requestSubmit(); element.requestSubmit() })
+    const response = await responsePromise
+    const item = await response.json()
+    await page.getByRole('heading', { name: '出品が完了しました', exact: true }).waitFor()
+    assert.equal(posts, count + 1)
+    assert.equal(item.title, title)
+    assert.equal(item.sale_type, 'fixed')
+    assert.equal(item.current_price, null)
+    assert.equal(item.end_at, null)
+    const image = page.getByAltText(title, { exact: true })
+    await image.waitFor()
+    await page.waitForFunction(title => {
+      const image = [...document.images].find(image => image.alt === title)
+      return image?.complete && image.naturalWidth === 3
+    }, title)
+    const reloadedImage = await context.request.get(`${base}/api${item.image_path}`)
+    assert.equal(reloadedImage.status(), 200)
+    assert.equal(reloadedImage.headers()['content-type'], 'image/png')
+    await page.screenshot({ path: path.join(outputs, 'listing-success-desktop.png'), fullPage: true })
+    await page.setViewportSize({ width: 375, height: 812 })
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false)
+    await page.screenshot({ path: path.join(outputs, 'listing-success-mobile.png'), fullPage: true })
+    await page.unroute('**/api/items/with-image')
+    checks.push('実APIで画像付き出品201となり、保存画像を別HTTPリクエストで再取得できる')
+    checks.push('送信中の重複submitを抑止し、1件だけ作成する')
+    checks.push('375pxのフォームと完了表示に横スクロールがない')
+
+    await page.getByRole('button', { name: '続けて出品する', exact: true }).click()
+    assert.equal(await page.getByLabel('商品名', { exact: true }).inputValue(), '')
+    await fill()
+    await page.route('**/api/items/with-image', route => route.fulfill({ status: 401, contentType: 'application/json', body: '{"detail":"Invalid credentials"}' }))
+    await submit().click()
+    await page.getByRole('heading', { name: 'ログイン', exact: true }).waitFor()
+    assert.equal(await page.evaluate(() => sessionStorage.getItem('hackathon.auth.session')), null)
+    checks.push('出品APIの401でログイン状態を破棄し、元の出品画面へ戻れるログイン導線を表示する')
+    assert.deepEqual(errors, [])
+    const result = { passed: true, itemId: item.id, sellerId: item.seller_id, title, checks, runtimeErrors: errors,
+      backend: 'Real local FastAPI / PostgreSQL / GCS-compatible emulator; fault responses only are intercepted' }
+    await fs.writeFile(path.join(outputs, 'listing-verification.json'), JSON.stringify(result, null, 2))
+    console.log(JSON.stringify(result, null, 2))
+  } finally { await browser.close() }
+}
+run().catch(error => { console.error(error); process.exitCode = 1 })

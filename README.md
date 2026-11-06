@@ -36,17 +36,19 @@ If you are developing a production application, we recommend using TypeScript wi
 | `src/pages/Home.jsx` | 仮商品一覧と理由付きの未体験趣味の目玉カード。 | ItemCard・Button。 |
 | `src/pages/Home.css` | ホーム専用目玉カード。コーラルを3用途に限定する。 | theme のトークン。 |
 | `src/pages/ItemDetail.jsx` | 仮商品の詳細・状態・購入ボタンの表示確認。 | ItemCard・Button。 |
-| `src/pages/ListingForm.jsx` | 認証後の入力フォームと入力内容のプレビュー。実際の出品はしない。 | ItemCard・Button。 |
+| `src/pages/ListingForm.jsx` | 認証必須の商品・画像入力、ファイル検証、実出品送信、保存完了とエラー表示。 | items API・ItemCard・Button・theme。 |
 | `src/pages/demoData.js` | 5趣味クラスタの表示確認用商品データ。 | 画面側のみ。 |
 | `src/pages/pages.css` | 画面のカード配置・フォーム・余白の共通スタイル。 | theme のトークン。 |
 | `src/pages/Login.jsx` | トークンと共通Buttonによる登録・ログイン。入力パスワードを保持しない。 | hooksの認証操作。 |
 | `src/api/client.js` | 環境別のAPI接続・Bearerヘッダー・安全なエラー表示。 | VITE_API_BASE_URL。 |
+| `src/api/items.js` | 画像と商品をmultipartで出品し、検証エラーを項目別に表示する。 | 認証付きAPIクライアント。 |
 | `src/api/auth.js` | 登録・ログイン・本人情報APIと応答の検証。 | APIクライアント。 |
 | `src/api/session.js` | タブ内トークン保持・本人確認・期限切れ・401・古い応答の排除。 | 認証API。 |
 | `src/hooks/useHashRoute.js` | URLの変更を購読し、ログアウト等の遷移を一貫して扱う。 | App。 |
 | `src/hooks/useAuth.js` | 認証状態の購読と復元・操作を画面に渡す。 | session。 |
 | `src/utils/authRedirect.js` | 内部画面だけを許可するログイン後の戻り先。 | App・Login。 |
 | `.env.example` | 秘密値を含まないAPI設定名の見本。 | Vite。 |
+| `tests/listing.e2e.cjs` | 実APIの画像付き出品・画像再取得・入力とサーバーエラー・二重送信抑止・401のブラウザーテスト。 | Playwright・分離DB・GCSエミュレーター。 |
 | `tests/auth.e2e.cjs` | 実APIでの登録・ログイン・再読み込み・保護導線と異常系のブラウザーテスト。 | Playwright（開発依存）。 |
 
 ## 共通部品の確認方法
@@ -85,7 +87,7 @@ import { Button, ItemCard, Header, BottomNav, StatusBadge } from './components'
 | `/#/` | ホーム（仮データの商品5件と、理由付きの「まだ知らない趣味」目玉カード） |
 | `/#/items/1` | 販売中の商品詳細 |
 | `/#/items/2` | 売却済みの商品詳細（購入ボタン無効） |
-| `/#/listing` | ログイン後の出品フォーム。入力チェック後にプレビュー表示。実際の出品なし |
+| `/#/listing` | ログイン後の出品フォーム。商品と画像をAPIに保存する |
 | `/#/login` | 登録・ログイン画面 |
 
 現在の元コードには3画面がなかったため、T1-3 では仮データの3画面を新規作成した。
@@ -113,7 +115,7 @@ T2-2 のバックエンド（登録・ログイン・本人確認API）を起動
 
 - 同じ画面でログイン／新規登録を切り替える。成功後は元の出品画面・商品詳細へ戻る。
 - ホームと商品閲覧は公開。出品フォームは保護し、未ログインの購入ボタンもログインへ誘導する。
-- 購入・出品は引き続きサンプル表示。サーバーへの実購入・出品APIは呼ばない。
+- 購入は引き続きサンプル表示。T3-2以降の出品フォームは実APIへ商品と画像を保存する。
 - JWTと期限だけを **sessionStorage** に保持する。同じタブの再読み込みで復元し、タブを閉じると保持は終了する。
 - 再読み込み時は必ず `/auth/me` に照会し、本人確認前・通信失敗時に保護画面を表示しない。保存した表示名等を認証の根拠にしない。
 - 通信失敗では保存情報を残して再試行できる。有効期限や保護APIの401では保持情報を破棄して再ログインへ誘導する。
@@ -143,3 +145,40 @@ Chromiumの代わりに導入済みブラウザーを使う場合は `PLAYWRIGHT
 参照：[React公式 useSyncExternalStore](https://react.dev/reference/react/useSyncExternalStore)、
 [Vite公式 proxy](https://vite.dev/config/server-options.html#server-proxy)、
 [OWASP Storage APIs](https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html#storage-apis)。
+
+## T3-2 画像付き出品
+
+出品フォームは商品名・説明・カテゴリ（5趣味）・状態・価格・画像1枚を入力し、
+`POST /items/with-image` へ `item`（商品JSON文字列）と `image`（ファイル）をmultipart送信する。
+Bearer JWTは認証セッションから送信直前に取得し、画面にトークンを渡さない。
+画像はJPEG・PNG・WebP、5MB以下。選択直後にプレビューし、API側でも実体・容量・画素数を検証する。
+既存のJSON `POST /items` は維持されている。
+
+- 出品中は入力とボタンを無効化し、重複submitも抑止する。
+- 成功時だけ商品番号・保存済み画像・商品の内容を表示する。
+- 入力エラーは項目別の理由を表示し、保存先の障害・通信失敗は完了扱いにしない。入力内容は再試行まで保持する。
+- 401では保持したログイン情報を破棄し、出品画面へ戻れるログイン導線を表示する。
+- ホームの商品一覧・詳細は引き続き仮データで、今回の保存結果はそこへ自動追加しない。
+
+画像保存にはバックエンドのT3-2対応版が必要。
+Cloud Storageバケットは現時点で未作成のため、公開環境では先に非公開バケットを用意し、
+Cloud Runへ `ITEM_IMAGES_BUCKET` と `GOOGLE_CLOUD_PROJECT` を設定する。
+Cloud Run実行サービスアカウントに当該バケットの画像作成・取得・削除権限を付ける。
+フロントにStorage認証情報を置かず、画像はAPIの `/items/{id}/image` 経由で表示する。
+バックエンドの `cd/docs/item-images.md` に設定・API・確認手順を記載した。
+本番バケットの作成・権限変更・デプロイは今回実行していない。
+
+### 出品ブラウザーテスト
+
+T3-2対応API・分離したPostgreSQL・GCSエミュレーターへ接続したローカルフロントを用意して実行する。
+
+```sh
+LISTING_E2E_ALLOW_WRITES=1 LISTING_E2E_BASE_URL=http://localhost:5181 npm run test:listing
+```
+
+テストは実際に登録・出品するため、ローカルURLと明示的な書き込み許可の両方を必須とする。
+`PLAYWRIGHT_CHANNEL=msedge` 等でブラウザを切り替え可能。
+結果・スクリーンショットは `test-results/listing/`（Git除外）に保存し、`LISTING_E2E_OUTPUT_DIR` で変更できる。
+実APIでの出品201、入力422、画像の再取得、障害表示、二重submit抑止、401導線、375px幅を検証する。
+サーバー障害・通信失敗・401のみネットワーク差し替えで再現する。
+実GCSのIAM・本番バケットへのアップロードはローカルエミュレーターの検証には含まれない。

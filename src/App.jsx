@@ -82,7 +82,7 @@ export default function App() {
         <p>{auth.notice}</p>
         {auth.status === 'error' && <Button variant="secondary" onClick={() => { void auth.restoreSession() }}>再試行</Button>}
       </div>}
-      {path !== '#/login' && <p className="app-sample-note">サンプル表示：商品・おすすめ・出品フォームは表示確認用です。</p>}
+      {path !== '#/login' && <p className="app-sample-note">サンプル表示：ホームの商品・おすすめは表示確認用です。</p>}
       <main className="app-main" id="page-content" tabIndex={-1}>{content}</main>
       <BottomNav items={navItems} currentId={currentId} />
     </div>
