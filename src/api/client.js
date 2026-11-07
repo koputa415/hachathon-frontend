@@ -31,6 +31,16 @@ export async function apiRequest(path, { method = 'GET', body, token, signal } =
   const authPath = /^\/auth\/(register|login|me)$/.test(path)
   const configurationMessage = '認証サービスに接続できません。公開設定の確認が必要です。'
   if (!response.ok) {
+    if (path.startsWith('/purchases')) {
+      const message = response.status === 401 ? 'ログインの有効期限が切れました。もう一度ログインしてください。'
+        : response.status === 403 ? '自分が出品した商品は購入できません。'
+        : response.status === 409 ? 'この商品は売却済みです。購入履歴も確認してください。'
+        : response.status === 404 ? (method === 'GET' ? '購入記録が見つかりません。' : '商品が見つかりません。')
+        : response.status === 422 ? '購入する商品を確認してください。'
+        : method === 'GET' ? '購入記録を取得できませんでした。時間をおいて、もう一度お試しください。'
+        : '購入結果を確認できませんでした。購入履歴を確認してください。'
+      throw new ApiError(response.status, message)
+    }
     if (path.startsWith('/items')) {
       if (method === 'GET') {
         const message = response.status === 404 ? '商品が見つかりません。'

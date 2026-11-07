@@ -69,7 +69,7 @@ async function run() {
     await page.goto(`${base}/#/items/${fixtureItem.id}`)
     await page.getByRole('button', { name: '購入手続きへ', exact: true }).click()
     await loginTitle().waitFor()
-    assert.equal(await page.getByText('サンプル表示のため、購入手続きは行いません。', { exact: true }).count(), 0)
+    assert.equal(await page.getByRole('heading', { name: '購入内容の確認', exact: true }).count(), 0)
     await page.screenshot({ path: path.join(outputs, 'auth-without-history-desktop.png'), fullPage: true })
     checks.push('未ログインの購入操作をログインへ誘導する')
 
@@ -78,16 +78,15 @@ async function run() {
     await page.getByLabel('メールアドレス', { exact: true }).fill(email)
     await page.getByLabel('パスワード（8〜128文字）', { exact: true }).fill(password)
     await page.getByRole('button', { name: '登録して続ける', exact: true }).click()
-    await page.getByRole('heading', { name: '商品詳細', exact: true }).waitFor()
+    await page.getByRole('heading', { name: '購入内容の確認', exact: true }).waitFor()
     await page.getByText(`${displayName}さん`, { exact: true }).waitFor()
     assert.equal(await page.evaluate(({ key, password }) => {
       const value = JSON.parse(sessionStorage.getItem(key))
       return Object.keys(value).sort().join(',') === 'expiresAt,token'
         && !JSON.stringify(value).includes(password) && localStorage.length === 0
     }, { key: storageKey, password }), true)
-    await page.getByRole('button', { name: '購入手続きへ', exact: true }).click()
-    await page.getByText('サンプル表示のため、購入手続きは行いません。', { exact: true }).waitFor()
-    checks.push('実APIで新規登録し、元の商品詳細へ戻ってログイン後だけ購入入口を通す')
+    await page.getByRole('button', { name: '購入を確定する', exact: true }).waitFor()
+    checks.push('実APIで新規登録し、元の購入確認へ戻ってログイン後だけ購入入口を通す')
 
     await page.getByRole('button', { name: '出品する', exact: true }).click()
     await listingTitle().waitFor()

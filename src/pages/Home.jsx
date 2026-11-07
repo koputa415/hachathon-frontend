@@ -13,7 +13,7 @@ export default function Home({ onOpenItem, search, onSearch }) {
   const [request, setRequest] = useState({ cursor: null, q: filters.q, category: filters.category })
   const [page, setPage] = useState({ items: [], nextCursor: null, request: null, error: '' })
   const loading = page.request !== request
-  const featuredItem = page.items.find((item) => catalog.clusters.some((cluster) =>
+  const featuredItem = page.items.find((item) => item.status === 'available' && catalog.clusters.some((cluster) =>
     cluster.name === item.category && cluster.recommendation_enabled))
 
   useEffect(() => {

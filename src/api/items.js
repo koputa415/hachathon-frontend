@@ -32,10 +32,12 @@ export async function createItem(fields, image, signal) {
 }
 
 
-function readItem(item) {
+export function readItem(item) {
   if (!item || !Number.isSafeInteger(item.id) || item.id <= 0
     || typeof item.title !== 'string' || typeof item.description !== 'string'
     || typeof item.category !== 'string' || typeof item.condition !== 'string'
+    || !Number.isSafeInteger(item.seller_id) || item.seller_id <= 0
+    || !['available', 'sold'].includes(item.status)
     || !Number.isSafeInteger(item.price) || item.price < 1
     || (item.image_path !== null && item.image_path !== `/items/${item.id}/image`)) {
     throw new ApiError(0, '商品データを確認できませんでした。もう一度お試しください。')

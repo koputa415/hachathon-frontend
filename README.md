@@ -41,6 +41,13 @@ If you are developing a production application, we recommend using TypeScript wi
 | `src/api/hobbyClusters.js` | APIからカテゴリ一覧を取得・応答検証する。 | カテゴリ用フック。 |
 | `src/hooks/useHobbyClusters.js` | カテゴリの読込・失敗・再試行を共通管理する。 | 出品・一覧画面。 |
 | `src/pages/pages.css` | 画面のカード配置・フォーム・余白の共通スタイル。 | theme のトークン。 |
+| `src/pages/PurchaseConfirm.jsx` | DBの商品を確認し、明示操作で購入APIへ送信する。重複送信と結果不明時を扱う。 | items・purchases API・共通部品。 |
+| `src/pages/PurchaseComplete.jsx` | 本人の購入記録をAPIで再取得して購入結果を表示する。 | purchases API・共通部品。 |
+| `src/pages/PurchaseHistory.jsx` | 本人の購入履歴・購入時価格・売却済み商品・追加読み込みを表示する。 | purchases API・共通部品。 |
+| `src/api/purchases.js` | 購入作成・本人の履歴と結果取得・応答検証。 | 認証付きAPIクライアント。 |
+| `src/hooks/useItem.js` | 商品の取得・読み込み・404・再試行を共通管理する。 | items API・商品詳細・購入確認。 |
+| `src/hooks/usePurchase.js` | 購入結果の取得・404・再試行を管理する。 | purchases API・購入完了。 |
+| `tests/purchases.e2e.cjs` | 実購入・履歴保持・売却済み・競合・結果不明・認証をブラウザで確認する。 | 実API・分離DB・Playwright。 |
 | `src/pages/Login.jsx` | トークンと共通Buttonによる登録・ログイン。入力パスワードを保持しない。 | hooksの認証操作。 |
 | `src/api/client.js` | 環境別のAPI接続・Bearerヘッダー・安全なエラー表示。 | VITE_API_BASE_URL。 |
 | `src/api/items.js` | 画像と商品をmultipartで出品し、検証エラーを項目別に表示する。 | 認証付きAPIクライアント。 |
@@ -254,3 +261,13 @@ ITEMS_E2E_ALLOW_WRITES=1 ITEMS_E2E_BASE_URL=http://localhost:5182 npm run test:i
 バックエンドのカテゴリ管理追加を先に反映する必要がある。
 
 検証：出品ブラウザテストはカテゴリ取得障害・再試行・API由来の追加選択肢・その他の画像付き保存も対象にする。
+
+
+## T4-2 購入確認・完了・購入履歴
+
+購入確認 `#/items/{id}/purchase` → 明示的な購入送信 → 購入結果 `#/purchases/{id}`。
+購入結果はAPIで本人の購入記録を読み、再読み込みでも確認する。履歴は `#/purchases`。
+いずれもログインが必要で、ログイン後は元の内部画面へ戻る。
+「実際の決済は行われません」を確認画面に明記し、完了・履歴にも実決済なしの説明を置く。
+カードはAPIの販売状態を表示し、売却済み・自分の商品は購入できない。
+POSTの通信失敗などで結果が不明な場合は成功扱いせず、購入履歴の確認と商品再取得へ案内する。

@@ -7,17 +7,23 @@ import Home from './pages/Home.jsx'
 import ItemDetail from './pages/ItemDetail.jsx'
 import ListingForm from './pages/ListingForm.jsx'
 import Login from './pages/Login.jsx'
+import PurchaseConfirm from './pages/PurchaseConfirm.jsx'
+import PurchaseComplete from './pages/PurchaseComplete.jsx'
+import PurchaseHistory from './pages/PurchaseHistory.jsx'
 import './App.css'
 
 export default function App() {
   const [route, navigate] = useHashRoute()
   const auth = useAuth()
   const path = route.split('?')[0]
-  const protectedRoute = path === '#/listing'
+  const purchaseMatch = path.match(/^#\/items\/([1-9]\d*)\/purchase$/)
+  const receiptMatch = path.match(/^#\/purchases\/([1-9]\d*)$/)
+  const protectedRoute = path === '#/listing' || path === '#/purchases' || Boolean(purchaseMatch || receiptMatch)
   const next = loginReturnTo(route)
   const navItems = [
     { id: 'home', label: 'ホーム', href: '#/' },
     { id: 'listing', label: '出品', href: '#/listing' },
+    { id: 'purchases', label: '購入履歴', href: '#/purchases' },
     ...(!auth.isAuthenticated ? [{ id: 'login', label: 'ログイン', href: '#/login' }] : []),
   ]
 
@@ -60,11 +66,21 @@ export default function App() {
   } else if (path === '#/listing') {
     currentId = 'listing'
     content = <ListingForm key={auth.user.id} onRequireAuth={() => requireAuth(path)} />
+  } else if (purchaseMatch) {
+    content = <PurchaseConfirm key={`${purchaseMatch[1]}-${auth.user.id}`} itemId={purchaseMatch[1]} userId={auth.user.id}
+      onRequireAuth={() => requireAuth(path)} onComplete={(id) => navigate(`#/purchases/${id}`)} />
+  } else if (path === '#/purchases') {
+    currentId = 'purchases'
+    content = <PurchaseHistory key={auth.user.id} />
+  } else if (receiptMatch) {
+    currentId = 'purchases'
+    content = <PurchaseComplete key={`${receiptMatch[1]}-${auth.user.id}`} purchaseId={receiptMatch[1]} />
   } else {
     const match = path.match(/^#\/items\/([1-9]\d*)$/)
     content = match ? (
-      <ItemDetail key={`${match[1]}-${auth.user?.id || 'guest'}`} itemId={match[1]}
-        onRequirePurchase={() => requireAuth(path)} onShowListing={() => navigate('#/listing')} />
+      <ItemDetail key={`${match[1]}-${auth.user?.id || 'guest'}`} itemId={match[1]} userId={auth.user?.id}
+        onPurchase={() => { if (requireAuth(`${path}/purchase`)) navigate(`${path}/purchase`) }}
+        onShowListing={() => navigate('#/listing')} />
     ) : (
       <div className="page-stack"><h1>ページが見つかりません</h1><a className="page-link" href="#/">ホームに戻る</a></div>
     )
