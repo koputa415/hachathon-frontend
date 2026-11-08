@@ -3,6 +3,7 @@ import { Button, ItemCard } from '../components/index.js'
 import { createItem } from '../api/items.js'
 import { useHobbyClusters } from '../hooks/useHobbyClusters.js'
 import { usePricePrediction } from '../hooks/usePricePrediction.js'
+import { useDescriptionDraft } from '../hooks/useDescriptionDraft.js'
 import './pages.css'
 
 const maxImageSize = 5 * 1024 * 1024
@@ -13,6 +14,10 @@ export default function ListingForm({ onRequireAuth }) {
   const [predictionInput, setPredictionInput] = useState({ title: '', category: '', condition: '' })
   const prediction = usePricePrediction(predictionInput)
   const [image, setImage] = useState(null)
+  const [description, setDescription] = useState('')
+  const [descriptionFromAI, setDescriptionFromAI] = useState(false)
+  const descriptionField = useRef(null)
+  const draft = useDescriptionDraft(predictionInput, image)
   const [imagePreview, setImagePreview] = useState('')
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
@@ -79,6 +84,8 @@ export default function ListingForm({ onRequireAuth }) {
     request.current = new AbortController()
     try {
       const item = await createItem(fields, image, request.current.signal)
+      setDescription('')
+      setDescriptionFromAI(false)
       setCreated(item)
       setPredictionInput({ title: '', category: '', condition: '' })
       updateImage(null)
@@ -120,7 +127,7 @@ export default function ListingForm({ onRequireAuth }) {
         </section>
       ) : (
         <form className="page-panel page-stack listing-form" onSubmit={handleSubmit} aria-busy={pending}
-          onReset={() => { updateImage(null); resetFeedback(); setPredictionInput({ title: '', category: '', condition: '' }) }} onInput={(event) => {
+          onReset={() => { updateImage(null); resetFeedback(); setDescription(''); setDescriptionFromAI(false); setPredictionInput({ title: '', category: '', condition: '' }) }} onInput={(event) => {
             if (event.target.name !== 'image') event.target.setCustomValidity('')
             if (['title', 'category', 'condition'].includes(event.target.name)) {
               const { name, value } = event.target
@@ -137,7 +144,8 @@ export default function ListingForm({ onRequireAuth }) {
             </div>
             <div className="form-field">
               <label htmlFor="listing-description">商品の説明</label>
-              <textarea id="listing-description" name="description" rows={5} maxLength={2000} required placeholder="道具の特徴や状態、付属品など" {...fieldProps('description')} />
+              <textarea id="listing-description" name="description" ref={descriptionField} value={description} onChange={(event) => setDescription(event.target.value)} rows={5} maxLength={2000} required placeholder="道具の特徴や状態、付属品など" {...fieldProps('description')} />
+              {descriptionFromAI && <p className="form-help">AIが生成した下書きを反映しました。内容を確認し、現在の状態に合わせて編集してください。</p>}
               {fieldError('description')}
             </div>
             <div className="form-field">
@@ -188,6 +196,27 @@ export default function ListingForm({ onRequireAuth }) {
                 setFieldErrors({ image: '画像を読み取れませんでした。別の画像を選んでください。' })
               }} />}
             </div>
+            <section className="page-notice page-stack" aria-labelledby="description-draft-title">
+              <h2 id="description-draft-title">AIで商品説明を下書き</h2>
+              <p className="form-help">写真・商品名・カテゴリをGeminiへ送って、説明文の下書きを作ります。生成後に内容を確認・編集できます。</p>
+              <Button variant="secondary" disabled={!draft.ready || draft.loading} onClick={draft.generate}>
+                {draft.loading ? '下書きを作っています…' : '説明文の下書きを生成'}
+              </Button>
+              {!draft.ready && <p className="form-help">写真・商品名・カテゴリを入力すると使えます。</p>}
+              {draft.error && <p role="status">{draft.error}</p>}
+              {draft.value?.status === 'unavailable' && <p role="status">現在、AIの下書きを生成できません。説明文を手入力して出品できます。</p>}
+              {draft.value?.status === 'generated' && <div className="page-stack" aria-live="polite">
+                <label htmlFor="description-draft-preview">AIが生成した説明文の下書き</label>
+                <textarea id="description-draft-preview" rows={6} readOnly value={draft.value.text} />
+                <Button variant="secondary" onClick={() => {
+                  setDescription(draft.value.text)
+                  setDescriptionFromAI(true)
+                  descriptionField.current?.setCustomValidity('')
+                  descriptionField.current?.focus()
+                }}>この下書きを説明欄に反映</Button>
+                <p className="form-help">反映すると説明欄の文章が置き換わります。傷・付属品・動作などをご自身で確認して編集してください。</p>
+              </div>}
+            </section>
             <div className="page-actions">
               <Button type="submit" disabled={catalog.loading || Boolean(catalog.error)}>{pending ? '出品しています…' : '出品する'}</Button>
               <Button type="reset" variant="secondary">入力をクリア</Button>

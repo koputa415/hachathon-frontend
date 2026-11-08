@@ -31,6 +31,13 @@ export async function apiRequest(path, { method = 'GET', body, token, signal } =
   const authPath = /^\/auth\/(register|login|me)$/.test(path)
   const configurationMessage = '認証サービスに接続できません。公開設定の確認が必要です。'
   if (!response.ok) {
+    if (path === '/items/description-draft') {
+      const message = response.status === 401 ? 'ログインの有効期限が切れました。もう一度ログインしてください。'
+        : response.status === 413 ? '写真は5MB以下のファイルを選んでください。'
+        : [415, 422].includes(response.status) ? '写真・商品名・カテゴリを確認してください。'
+        : '下書きを生成できませんでした。手入力して出品できます。'
+      throw new ApiError(response.status, message)
+    }
     if (path.startsWith('/recommendations')) {
       throw new ApiError(response.status, response.status === 401
         ? 'ログインの有効期限が切れました。もう一度ログインしてください。'
