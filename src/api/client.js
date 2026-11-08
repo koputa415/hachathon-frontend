@@ -31,6 +31,17 @@ export async function apiRequest(path, { method = 'GET', body, token, signal } =
   const authPath = /^\/auth\/(register|login|me)$/.test(path)
   const configurationMessage = '認証サービスに接続できません。公開設定の確認が必要です。'
   if (!response.ok) {
+    if (path.startsWith('/recommendations')) {
+      throw new ApiError(response.status, response.status === 401
+        ? 'ログインの有効期限が切れました。もう一度ログインしてください。'
+        : '趣味の提案を取得できませんでした。時間をおいてお試しください。')
+    }
+    if (path.startsWith('/ml/')) {
+      const message = response.status === 401 ? 'ログインの有効期限が切れました。もう一度ログインしてください。'
+        : response.status === 422 ? '商品名・カテゴリ・状態を確認してください。'
+        : '予測価格を取得できませんでした。価格を入力して出品できます。'
+      throw new ApiError(response.status, message)
+    }
     if (path.startsWith('/purchases')) {
       const message = response.status === 401 ? 'ログインの有効期限が切れました。もう一度ログインしてください。'
         : response.status === 403 ? '自分が出品した商品は購入できません。'

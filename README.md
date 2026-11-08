@@ -271,3 +271,44 @@ ITEMS_E2E_ALLOW_WRITES=1 ITEMS_E2E_BASE_URL=http://localhost:5182 npm run test:i
 「実際の決済は行われません」を確認画面に明記し、完了・履歴にも実決済なしの説明を置く。
 カードはAPIの販売状態を表示し、売却済み・自分の商品は購入できない。
 POSTの通信失敗などで結果が不明な場合は成功扱いせず、購入履歴の確認と商品再取得へ案内する。
+
+
+## T5-4 表示価格の予測
+
+| ファイル | 役割 |
+| --- | --- |
+| `src/api/ml.js` | JWT付き予測APIの呼び出しと表示用応答の検証 |
+| `src/hooks/usePricePrediction.js` | 入力の待ち合わせ・古い応答の破棄・再取得・予測エラーの管理 |
+
+
+| ファイル | 役割 |
+| --- | --- |
+| `src/api/recommendations.js` | 本人用のおすすめを取得し、商品との整合性を検証 |
+| `src/hooks/useRecommendations.js` | ログイン本人ごとの取得・古い応答破棄・再試行 |
+
+
+| ファイル | 役割 |
+| --- | --- |
+| `tests/ml.e2e.cjs` | 実APIの予測価格・その他出品・理由付き未経験提案・再読込・失敗時の導線をブラウザで確認 |
+
+
+出品フォームは商品名・カテゴリ・状態の入力から500ms後に `POST /ml/price-prediction` を呼び、
+「AIによる表示価格の予測」を表示します。「その他」も対応し、手入力価格を上書きしません。
+失敗しても出品を続けられ、再試行できます。小さい自前シードの円分布への暫定較正で、成約価格の保証ではありません。
+
+ホームは `GET /recommendations` を使い、本人がアプリ内で購入・出品した趣味を起点に、
+まだ扱っていない趣味の販売中商品を理由チップ付きで表示します。その他は起点にも提案先にも含めません。
+未ログインはログイン導線、履歴なし・対象商品なしは空状態、取得失敗は再試行を表示します。
+カテゴリ一覧・検索は引き続きAPI由来で、その他を含みます。DB・学習の仕様はバックエンドdocs/ml-integration.mdを参照。
+
+ブラウザ検証（使い捨てのローカルDBへ接続した環境のみ）：
+
+```sh
+ML_E2E_BASE_URL=http://localhost:5182 ML_E2E_ALLOW_WRITES=1 npm run test:ml
+```
+
+MerRec（Li, Din, Tan, London, Chen, Daptardar）の特徴・閲覧集計から学習した派生成果物を利用します。
+出典：https://huggingface.co/datasets/mercari-us/merrec ／ CC BY-NC 4.0：https://creativecommons.org/licenses/by-nc/4.0/ 。
+元のMerRec商品は画面表示せず、デモには自前シードを使います。
+
+T5-4確認：新規ブラウザ10項目と既存の認証14・出品10・一覧詳細8・購入8項目が成功。lint/build成功。価格予測と提案の色は既存トークンを使用し、コーラルはホーム目玉カードの指定箇所のみ。本番未反映。

@@ -73,7 +73,7 @@ async function run() {
     const otherUrl = page.url()
     assert.equal(new URLSearchParams(otherUrl.split('?')[1]).get('category'), 'その他')
     assert.equal(await page.locator('.ui-item-card').count(), 1)
-    assert.equal(await page.locator('.discovery-feature').count(), 0)
+    assert.equal(await page.locator('.discovery-feature__chip').count(), 0)
     const beforeSearchReload = reads.length
     await page.reload()
     await page.getByRole('link', { name: title, exact: true }).waitFor()

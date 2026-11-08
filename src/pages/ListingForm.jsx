@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Button, ItemCard } from '../components/index.js'
 import { createItem } from '../api/items.js'
 import { useHobbyClusters } from '../hooks/useHobbyClusters.js'
+import { usePricePrediction } from '../hooks/usePricePrediction.js'
 import './pages.css'
 
 const maxImageSize = 5 * 1024 * 1024
@@ -9,6 +10,8 @@ const imageTypes = ['image/jpeg', 'image/png', 'image/webp']
 
 export default function ListingForm({ onRequireAuth }) {
   const catalog = useHobbyClusters()
+  const [predictionInput, setPredictionInput] = useState({ title: '', category: '', condition: '' })
+  const prediction = usePricePrediction(predictionInput)
   const [image, setImage] = useState(null)
   const [imagePreview, setImagePreview] = useState('')
   const [pending, setPending] = useState(false)
@@ -77,6 +80,7 @@ export default function ListingForm({ onRequireAuth }) {
     try {
       const item = await createItem(fields, image, request.current.signal)
       setCreated(item)
+      setPredictionInput({ title: '', category: '', condition: '' })
       updateImage(null)
     } catch (failure) {
       if (failure.name !== 'AbortError') {
@@ -116,8 +120,12 @@ export default function ListingForm({ onRequireAuth }) {
         </section>
       ) : (
         <form className="page-panel page-stack listing-form" onSubmit={handleSubmit} aria-busy={pending}
-          onReset={() => { updateImage(null); resetFeedback() }} onInput={(event) => {
+          onReset={() => { updateImage(null); resetFeedback(); setPredictionInput({ title: '', category: '', condition: '' }) }} onInput={(event) => {
             if (event.target.name !== 'image') event.target.setCustomValidity('')
+            if (['title', 'category', 'condition'].includes(event.target.name)) {
+              const { name, value } = event.target
+              setPredictionInput((previous) => ({ ...previous, [name]: value }))
+            }
           }}>
           <p>すべての項目を入力してください。画像は1枚、5MB以下のJPEG・PNG・WebPに対応しています。</p>
           <fieldset className="auth-fields page-stack" disabled={pending}>
@@ -153,6 +161,19 @@ export default function ListingForm({ onRequireAuth }) {
               </select>
               {fieldError('condition')}
             </div>
+            <section className="page-notice page-stack" aria-labelledby="prediction-title" aria-live="polite">
+              <h2 id="prediction-title">AIによる表示価格の予測</h2>
+              {!prediction.ready && <p>商品名・カテゴリ・状態を入力すると、参考の表示価格を予測します。</p>}
+              {prediction.loading && <p role="status">表示価格を予測しています…</p>}
+              {prediction.value && <>
+                <p><strong>{new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(prediction.value.predicted_price)}</strong></p>
+                <p className="form-help">少数のデモ商品の円価格に合わせた参考値です。成約価格を保証するものではありません。出品価格はご自身で入力してください。</p>
+              </>}
+              {prediction.error && <div className="page-stack">
+                <p>{prediction.error}</p>
+                <Button variant="secondary" onClick={prediction.retry}>予測を再取得</Button>
+              </div>}
+            </section>
             <div className="form-field">
               <label htmlFor="listing-price">価格（円）</label>
               <input id="listing-price" name="price" type="number" min="1" max="999999999" step="1" required inputMode="numeric" placeholder="例：12000" {...fieldProps('price')} />
