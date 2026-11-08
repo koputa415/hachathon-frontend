@@ -37,6 +37,7 @@ export default function PurchaseHistory() {
           href={`#/items/${purchase.item_id}`} />
         <p className="page-muted">購入番号：{purchase.id}</p>
         <a className="page-link" href={`#/purchases/${purchase.id}`}>購入結果を見る</a>
+        <a className="page-link" href={`#/purchases/${purchase.id}/relist`}>この道具を再出品する</a>
       </section>)}
     </div>
     {page.nextCursor !== null && !page.error && <div className="page-actions">

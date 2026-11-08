@@ -9,16 +9,17 @@ import './pages.css'
 const maxImageSize = 5 * 1024 * 1024
 const imageTypes = ['image/jpeg', 'image/png', 'image/webp']
 
-export default function ListingForm({ onRequireAuth }) {
+export default function ListingForm({ onRequireAuth, initialListing }) {
   const catalog = useHobbyClusters()
-  const [predictionInput, setPredictionInput] = useState({ title: '', category: '', condition: '' })
+  const [predictionInput, setPredictionInput] = useState({ title: initialListing?.item.title || '', category: initialListing?.item.category || '', condition: '' })
   const prediction = usePricePrediction(predictionInput)
-  const [image, setImage] = useState(null)
-  const [description, setDescription] = useState('')
-  const [descriptionFromAI, setDescriptionFromAI] = useState(false)
+  const [sourcePurchaseId, setSourcePurchaseId] = useState(initialListing?.purchase_id || null)
+  const [image, setImage] = useState(initialListing?.imageFile || null)
+  const [description, setDescription] = useState(initialListing?.description.text || initialListing?.item.description || '')
+  const [descriptionFromAI, setDescriptionFromAI] = useState(initialListing?.description.ai_generated || false)
   const descriptionField = useRef(null)
-  const draft = useDescriptionDraft(predictionInput, image)
-  const [imagePreview, setImagePreview] = useState('')
+  const draft = useDescriptionDraft({ ...predictionInput, source_purchase_id: sourcePurchaseId }, image)
+  const previewImage = useRef(null)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState({})
@@ -28,12 +29,16 @@ export default function ListingForm({ onRequireAuth }) {
   const result = useRef(null)
 
   useEffect(() => () => request.current?.abort(), [])
-  useEffect(() => () => { if (imagePreview) URL.revokeObjectURL(imagePreview) }, [imagePreview])
+  useEffect(() => {
+    if (!image || !previewImage.current) return
+    const url = URL.createObjectURL(image)
+    previewImage.current.src = url
+    return () => URL.revokeObjectURL(url)
+  }, [image])
   useEffect(() => { if (created) result.current?.focus() }, [created])
 
   function updateImage(file) {
     setImage(file)
-    setImagePreview(file ? URL.createObjectURL(file) : '')
   }
 
   function resetFeedback() {
@@ -86,6 +91,7 @@ export default function ListingForm({ onRequireAuth }) {
       const item = await createItem(fields, image, request.current.signal)
       setDescription('')
       setDescriptionFromAI(false)
+      setSourcePurchaseId(null)
       setCreated(item)
       setPredictionInput({ title: '', category: '', condition: '' })
       updateImage(null)
@@ -109,7 +115,14 @@ export default function ListingForm({ onRequireAuth }) {
 
   return (
     <div className="page-stack">
-      <h1>道具を出品する</h1>
+      <h1>{sourcePurchaseId ? '購入した道具を再出品する' : '道具を出品する'}</h1>
+      {sourcePurchaseId && <div className="page-notice page-stack">
+        <p>以前の情報から下書きを用意しました。現在の状態と写真を確認し、説明・状態・価格を編集して出品してください。</p>
+        {initialListing.description.status === 'unavailable' && <p>AIの再生成ができなかったため、以前の説明を表示しています。手入力で修正して出品できます。</p>}
+        {!image && <p>以前の写真を引き継げませんでした。現在の写真を選んでください。</p>}
+        {image === initialListing.imageFile && image && <p>以前の商品写真を引き継いでいます。現在の状態に合わせて差し替えられます。</p>}
+        <a className="page-link" href="#/purchases">購入履歴に戻る</a>
+      </div>}
       <p className="page-muted">次の誰かの、新しい趣味のきっかけに。</p>
       {created ? (
         <section className="page-stack" aria-labelledby="listing-result-title" ref={result} tabIndex={-1}>
@@ -127,19 +140,15 @@ export default function ListingForm({ onRequireAuth }) {
         </section>
       ) : (
         <form className="page-panel page-stack listing-form" onSubmit={handleSubmit} aria-busy={pending}
-          onReset={() => { updateImage(null); resetFeedback(); setDescription(''); setDescriptionFromAI(false); setPredictionInput({ title: '', category: '', condition: '' }) }} onInput={(event) => {
+          onReset={() => { updateImage(null); resetFeedback(); setSourcePurchaseId(null); setDescription(''); setDescriptionFromAI(false); setPredictionInput({ title: '', category: '', condition: '' }) }} onInput={(event) => {
             if (event.target.name !== 'image') event.target.setCustomValidity('')
-            if (['title', 'category', 'condition'].includes(event.target.name)) {
-              const { name, value } = event.target
-              setPredictionInput((previous) => ({ ...previous, [name]: value }))
-            }
           }}>
           <p>すべての項目を入力してください。画像は1枚、5MB以下のJPEG・PNG・WebPに対応しています。</p>
           <fieldset className="auth-fields page-stack" disabled={pending}>
             <legend className="auth-legend">出品する商品の情報</legend>
             <div className="form-field">
               <label htmlFor="listing-title">商品名</label>
-              <input id="listing-title" name="title" required maxLength={100} placeholder="例：フィルムカメラ" {...fieldProps('title')} />
+              <input id="listing-title" name="title" value={predictionInput.title} onChange={(event) => setPredictionInput(previous => ({ ...previous, title: event.target.value }))} required maxLength={100} placeholder="例：フィルムカメラ" {...fieldProps('title')} />
               {fieldError('title')}
             </div>
             <div className="form-field">
@@ -150,7 +159,7 @@ export default function ListingForm({ onRequireAuth }) {
             </div>
             <div className="form-field">
               <label htmlFor="listing-category">カテゴリ（趣味）</label>
-              <select id="listing-category" name="category" required defaultValue="" disabled={catalog.loading || Boolean(catalog.error)} {...fieldProps('category')}>
+              <select id="listing-category" name="category" value={predictionInput.category} onChange={(event) => setPredictionInput(previous => ({ ...previous, category: event.target.value }))} required disabled={catalog.loading || Boolean(catalog.error)} {...fieldProps('category')}>
                 <option value="" disabled>選んでください</option>
                 {catalog.clusters.map((cluster) => <option key={cluster.id} value={cluster.name}>{cluster.name}</option>)}
               </select>
@@ -163,7 +172,7 @@ export default function ListingForm({ onRequireAuth }) {
             </div>
             <div className="form-field">
               <label htmlFor="listing-condition">商品の状態</label>
-              <select id="listing-condition" name="condition" required defaultValue="" {...fieldProps('condition')}>
+              <select id="listing-condition" name="condition" value={predictionInput.condition} onChange={(event) => setPredictionInput(previous => ({ ...previous, condition: event.target.value }))} required {...fieldProps('condition')}>
                 <option value="" disabled>選んでください</option>
                 {['未使用に近い', '目立った傷や汚れなし', 'やや傷や汚れあり'].map((condition) => <option key={condition}>{condition}</option>)}
               </select>
@@ -189,9 +198,9 @@ export default function ListingForm({ onRequireAuth }) {
             </div>
             <div className="form-field">
               <label htmlFor="listing-image">商品画像</label>
-              <input id="listing-image" name="image" type="file" accept="image/jpeg,image/png,image/webp" required onChange={chooseImage} {...fieldProps('image')} />
+              <input id="listing-image" name="image" type="file" accept="image/jpeg,image/png,image/webp" required={!image} onChange={chooseImage} {...fieldProps('image')} />
               {fieldError('image')}
-              {imagePreview && <img className="listing-image-preview" src={imagePreview} alt="選択した商品画像のプレビュー" onError={() => {
+              {image && <img className="listing-image-preview" ref={previewImage} alt="選択した商品画像のプレビュー" onError={() => {
                 updateImage(null)
                 setFieldErrors({ image: '画像を読み取れませんでした。別の画像を選んでください。' })
               }} />}
@@ -205,7 +214,7 @@ export default function ListingForm({ onRequireAuth }) {
               {!draft.ready && <p className="form-help">写真・商品名・カテゴリを入力すると使えます。</p>}
               {draft.error && <p role="status">{draft.error}</p>}
               {draft.value?.status === 'unavailable' && <p role="status">現在、AIの下書きを生成できません。説明文を手入力して出品できます。</p>}
-              {draft.value?.status === 'generated' && <div className="page-stack" aria-live="polite">
+              {draft.value?.status === 'generated' && <div className="page-stack form-field" aria-live="polite">
                 <label htmlFor="description-draft-preview">AIが生成した説明文の下書き</label>
                 <textarea id="description-draft-preview" rows={6} readOnly value={draft.value.text} />
                 <Button variant="secondary" onClick={() => {

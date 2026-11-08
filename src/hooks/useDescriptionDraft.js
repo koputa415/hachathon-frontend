@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { generateDescription } from '../api/gemini.js'
 
-export function useDescriptionDraft({ title, category, condition }, image) {
-  const input = useMemo(() => ({ fields: { title: title.trim(), category, ...(condition ? { condition } : {}) }, image }), [title, category, condition, image])
+export function useDescriptionDraft({ title, category, condition, source_purchase_id }, image) {
+  const input = useMemo(() => ({ fields: { title: title.trim(), category, ...(condition ? { condition } : {}), ...(source_purchase_id ? { source_purchase_id } : {}) }, image }), [title, category, condition, source_purchase_id, image])
   const [state, setState] = useState({ input: null, loading: false, value: null, error: '' })
   const request = useRef(null)
   useEffect(() => () => request.current?.abort(), [input])

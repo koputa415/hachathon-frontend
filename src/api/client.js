@@ -9,10 +9,10 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiRequest(path, { method = 'GET', body, token, signal } = {}) {
+export async function apiRequest(path, { method = 'GET', body, token, signal, timeoutMs } = {}) {
   let response
   const multipart = body instanceof FormData
-  const timeout = AbortSignal.timeout(multipart ? 45000 : 15000)
+  const timeout = AbortSignal.timeout(timeoutMs ?? (multipart ? 45000 : 15000))
   const requestSignal = signal ? AbortSignal.any([signal, timeout]) : timeout
   try {
     response = await fetch(`${apiBase}${path}`, {
@@ -31,6 +31,12 @@ export async function apiRequest(path, { method = 'GET', body, token, signal } =
   const authPath = /^\/auth\/(register|login|me)$/.test(path)
   const configurationMessage = '認証サービスに接続できません。公開設定の確認が必要です。'
   if (!response.ok) {
+    if (/^\/items\/relisting-draft\/[1-9]\d*$/.test(path)) {
+      const message = response.status === 401 ? 'ログインの有効期限が切れました。もう一度ログインしてください。'
+        : response.status === 404 ? '再出品できる購入記録が見つかりません。'
+        : '再出品の準備ができませんでした。もう一度お試しください。'
+      throw new ApiError(response.status, message)
+    }
     if (path === '/items/description-draft') {
       const message = response.status === 401 ? 'ログインの有効期限が切れました。もう一度ログインしてください。'
         : response.status === 413 ? '写真は5MB以下のファイルを選んでください。'

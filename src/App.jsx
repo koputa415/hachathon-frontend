@@ -10,6 +10,7 @@ import Login from './pages/Login.jsx'
 import PurchaseConfirm from './pages/PurchaseConfirm.jsx'
 import PurchaseComplete from './pages/PurchaseComplete.jsx'
 import PurchaseHistory from './pages/PurchaseHistory.jsx'
+import RelistingForm from './pages/RelistingForm.jsx'
 import './App.css'
 
 export default function App() {
@@ -17,8 +18,9 @@ export default function App() {
   const auth = useAuth()
   const path = route.split('?')[0]
   const purchaseMatch = path.match(/^#\/items\/([1-9]\d*)\/purchase$/)
+  const relistMatch = path.match(/^#\/purchases\/([1-9]\d*)\/relist$/)
   const receiptMatch = path.match(/^#\/purchases\/([1-9]\d*)$/)
-  const protectedRoute = path === '#/listing' || path === '#/purchases' || Boolean(purchaseMatch || receiptMatch)
+  const protectedRoute = path === '#/listing' || path === '#/purchases' || Boolean(purchaseMatch || receiptMatch || relistMatch)
   const next = loginReturnTo(route)
   const navItems = [
     { id: 'home', label: 'ホーム', href: '#/' },
@@ -63,6 +65,9 @@ export default function App() {
         if (category) query.set('category', category)
         navigate(query.size ? `#/?${query}` : '#/')
       }} onOpenItem={(id) => navigate(`#/items/${id}`)} />
+  } else if (relistMatch) {
+    currentId = 'listing'
+    content = <RelistingForm key={`${relistMatch[1]}-${auth.user.id}`} purchaseId={relistMatch[1]} onRequireAuth={() => requireAuth(path)} />
   } else if (path === '#/listing') {
     currentId = 'listing'
     content = <ListingForm key={auth.user.id} onRequireAuth={() => requireAuth(path)} />
