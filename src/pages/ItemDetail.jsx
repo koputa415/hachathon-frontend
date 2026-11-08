@@ -1,10 +1,12 @@
-import { Button, ItemCard } from '../components/index.js'
+import { Button, ItemCard, HobbyIntroCard } from '../components/index.js'
 import { useItem } from '../hooks/useItem.js'
 import { itemCardProps } from '../utils/itemPresentation.js'
+import { useHobbyIntroduction } from '../hooks/useHobbyIntroduction.js'
 import './pages.css'
 
 export default function ItemDetail({ itemId, userId, onShowListing, onPurchase }) {
   const { item, loading, error, notFound, retry } = useItem(itemId)
+  const introduction = useHobbyIntroduction(itemId, item?.category)
   return (
     <div className="page-stack">
       <a className="page-link" href="#/">ホームに戻る</a>
@@ -37,6 +39,7 @@ export default function ItemDetail({ itemId, userId, onShowListing, onPurchase }
           <Button variant="secondary" onClick={onShowListing}>自分の道具も出品する</Button>
         </section>
       </div>}
+      {!loading && item && <HobbyIntroCard category={item.category} {...introduction} onRetry={introduction.retry} />}
     </div>
   )
 }
