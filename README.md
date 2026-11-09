@@ -406,3 +406,19 @@ T8-2確認：lint・本番用ビルド、使い捨てAPI/DBにつないだブラ
 | `tests/image-cdn.test.mjs` | CDNのキャッシュ・エラー非保存・認証ヘッダー除去・画像URL設定のテスト |
 | `tests/image-cdn.e2e.cjs` | 実APIでアップロードした画像をCDN互換経路で表示・再読込できることを確認 |
 | `docs/image-cdn.md` | Cloudflare設定、環境変数、反映手順、ブラウザでの本番確認方法 |
+
+
+## T10-2 ロールによる表示制御
+
+| ファイル | 役割 |
+| --- | --- |
+| `src/api/admin.js` | 認証付きの管理者権限確認API呼び出し |
+| `src/components/AdminAccessPanel.jsx` | サーバーから取得したロールで確認ボタンを出し分ける表示部品 |
+| `src/pages/MyPage.jsx` | 管理者の確認操作・取得中・失敗時表示を接続する |
+| `tests/roles.e2e.cjs` | 一般・管理者の表示、直接API拒否、表示の偽装と通信失敗をブラウザで確認 |
+| `docs/roles.md` | ロール表示とサーバー認可の分担、反映順序と検証方法 |
+
+
+T10-2確認：ロール表示のブラウザ6ケース、既存認証のブラウザ14ケース、CDN単体7件、lint・buildが成功。
+一般からの直接API403、管理者の実API200、表示偽装でも拒否されることを確認した。
+本番の新API反映前にはDB移行が必要。`docs/roles.md`とバックエンドの`cd/docs/roles.md`を参照。

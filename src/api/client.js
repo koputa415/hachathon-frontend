@@ -44,6 +44,12 @@ export async function apiRequest(path, { method = 'GET', body, token, signal, ti
         : '下書きを生成できませんでした。手入力して出品できます。'
       throw new ApiError(response.status, message)
     }
+    if (path.startsWith('/admin/')) {
+      const message = response.status === 401 ? 'ログインの有効期限が切れました。もう一度ログインしてください。'
+        : response.status === 403 ? '管理者権限が必要です。ページを再読み込みしてください。'
+        : '管理者向けの確認ができませんでした。時間をおいてお試しください。'
+      throw new ApiError(response.status, message)
+    }
     if (path.startsWith('/likes')) {
       const message = response.status === 401 ? 'ログインの有効期限が切れました。もう一度ログインしてください。'
         : response.status === 404 ? '商品が見つかりません。いいね情報を再取得してください。'

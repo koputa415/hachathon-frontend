@@ -8,3 +8,5 @@ export { default as HobbyIntroCard } from './HobbyIntroCard.jsx'
 
 export { LikeButton } from './LikeButton.jsx'
 export { LikesFeedback } from './LikesFeedback.jsx'
+
+export { AdminAccessPanel } from './AdminAccessPanel.jsx'

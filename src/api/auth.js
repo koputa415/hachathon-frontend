@@ -1,11 +1,13 @@
 import { ApiError, apiRequest } from './client.js'
 
 export function validateUser(user) {
+  const role = user?.role === undefined ? 'user' : user.role
   if (!user || typeof user.id !== 'number' || !Number.isInteger(user.id) || user.id <= 0
-    || typeof user.email !== 'string' || typeof user.display_name !== 'string') {
+    || typeof user.email !== 'string' || typeof user.display_name !== 'string'
+    || !['user', 'admin'].includes(role)) {
     throw new ApiError(0, 'ユーザー情報を確認できませんでした。もう一度ログインしてください。')
   }
-  return { id: user.id, email: user.email, display_name: user.display_name }
+  return { id: user.id, email: user.email, display_name: user.display_name, role }
 }
 
 export async function authenticate(mode, credentials, signal) {
