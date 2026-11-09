@@ -135,6 +135,7 @@ export default function ListingForm({ onRequireAuth, initialListing }) {
           <p className="page-preserve-lines">{created.description}</p>
           <div className="page-actions">
             <Button onClick={() => { setCreated(null); resetFeedback() }}>続けて出品する</Button>
+            <a className="page-link" href={`#/items/${created.id}`}>商品詳細を見る</a>
             <a className="page-link" href="#/">ホームに戻る</a>
           </div>
         </section>

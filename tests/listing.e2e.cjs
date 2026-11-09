@@ -153,6 +153,21 @@ async function run() {
     checks.push('送信中の重複submitを抑止し、1件だけ作成する')
     checks.push('375pxのフォームと完了表示に横スクロールがない')
 
+    const detailLink = page.getByRole('link', { name: '商品詳細を見る', exact: true })
+    assert.equal(await detailLink.getAttribute('href'), `#/items/${item.id}`)
+    const detail = await context.newPage()
+    await detail.goto(`${base}/#/items/${item.id}`)
+    const loaded = () => detail.waitForFunction(title => {
+      const image = [...document.images].find(image => image.alt === title)
+      return image?.complete && image.naturalWidth === 3
+    }, title)
+    await loaded()
+    await detail.reload()
+    await loaded()
+    await detail.screenshot({ path: path.join(outputs, 'listing-detail-reloaded.png'), fullPage: true })
+    await detail.close()
+    checks.push('出品完了から詳細へのリンクがあり、詳細を再読み込みしても保存済み画像が表示される')
+
     await page.getByRole('button', { name: '続けて出品する', exact: true }).click()
     assert.equal(await page.getByLabel('商品名', { exact: true }).inputValue(), '')
     await fill()
