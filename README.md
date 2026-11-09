@@ -353,3 +353,18 @@ Geminiブラウザ検証11項目が成功（上流固定、認証・DB・画像�
 `GEMINI_E2E_BASE_URL=http://localhost:5182 GEMINI_E2E_ALLOW_WRITES=1 npm run test:gemini` で再実行できます。
 
 実接続確認：AI StudioのキーによるGemini Developer APIでCLI生成成功。ユーザー自身がローカルAPIへ環境変数を反映し、通常サイトの商品詳細でクラフトの趣味紹介が実Geminiから生成・表示されることも確認しました。説明文・再出品の自動テストは固定した上流応答を使用。本番未反映。
+
+
+## T7-2 GitHub Actions CI
+
+| ファイル | 役割 |
+| --- | --- |
+| `.github/workflows/frontend-ci.yml` | push／main向けPRでNode.js 24・npm ci・lint・本番用buildを実行し、結果をChecksへ表示 |
+
+
+pushとmain向けPRで **Frontend CI / Lint and build** が実行されます。
+Node.js 24でpackage-lock.jsonどおりにnpm ciを実行し、npm run lint、npm run buildの終了コードで判定します。
+失敗はPRのChecksとActionsに赤く表示され、Summaryとステップログで確認できます。
+修正をpushすると再実行されます。APIキーや本番DBへの接続は不要で、デプロイや自動マージは行いません。
+Actionsは読み取り専用権限、公式Actionはcommit SHAで固定しています。
+参照：[GitHub Actions Node.js](https://docs.github.com/en/actions/tutorials/build-and-test-code/nodejs)。
