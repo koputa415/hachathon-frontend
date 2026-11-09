@@ -1,10 +1,12 @@
 import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
 import { defineConfig, loadEnv } from 'vite'
+import { imageUrl } from './src/utils/imageUrl.js'
 
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   if (command === 'build') {
+    imageUrl('/items/1/image', env.VITE_ITEM_IMAGE_BASE_URL, '/unused')
     let apiUrl
     try { apiUrl = new URL(env.VITE_API_BASE_URL?.trim()) } catch {
       throw new Error('公開ビルドには VITE_API_BASE_URL の絶対URLが必要です。開発用 /api プロキシは本番では使えません。')

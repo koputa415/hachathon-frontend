@@ -395,3 +395,14 @@ T8-2確認：lint・本番用ビルド、使い捨てAPI/DBにつないだブラ
 
 既存のCloud Storage保存を維持し、出品完了から商品詳細へ直接移動できるようにしました。
 画像保存の503では出品完了を表示せず、入力と写真を保持します。
+
+
+## T9-2 CDN画像配信
+
+| ファイル | 役割 |
+| --- | --- |
+| `cloudflare-worker.js` | 設定された画像オリジンへ接続し、公開商品画像だけをCloudflare Cache APIで配信する |
+| `src/utils/imageUrl.js` | 環境変数に応じた商品画像URLの組み立てと接続先の検証 |
+| `tests/image-cdn.test.mjs` | CDNのキャッシュ・エラー非保存・認証ヘッダー除去・画像URL設定のテスト |
+| `tests/image-cdn.e2e.cjs` | 実APIでアップロードした画像をCDN互換経路で表示・再読込できることを確認 |
+| `docs/image-cdn.md` | Cloudflare設定、環境変数、反映手順、ブラウザでの本番確認方法 |

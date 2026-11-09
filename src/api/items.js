@@ -1,4 +1,5 @@
 import { ApiError, apiRequest, apiUrl } from './client.js'
+import { imageUrl } from '../utils/imageUrl.js'
 import { authenticatedRequest } from './session.js'
 
 const fieldMessages = {
@@ -22,7 +23,7 @@ export async function createItem(fields, image, signal) {
     if (item.image_path !== `/items/${item.id}/image`) {
       throw new ApiError(0, '出品画像の応答を確認できませんでした。保存状況を確認してください。')
     }
-    return { ...item, imageUrl: apiUrl(item.image_path) }
+    return { ...item, imageUrl: imageUrl(item.image_path, import.meta.env.VITE_ITEM_IMAGE_BASE_URL, apiUrl(item.image_path)) }
   } catch (error) {
     if (error.issues?.length) {
       error.fieldErrors = Object.fromEntries(error.issues.map(({ field }) => [field, fieldMessages[field]]))
@@ -42,7 +43,7 @@ export function readItem(item) {
     || (item.image_path !== null && item.image_path !== `/items/${item.id}/image`)) {
     throw new ApiError(0, '商品データを確認できませんでした。もう一度お試しください。')
   }
-  return { ...item, imageUrl: item.image_path ? apiUrl(item.image_path) : null }
+  return { ...item, imageUrl: item.image_path ? imageUrl(item.image_path, import.meta.env.VITE_ITEM_IMAGE_BASE_URL, apiUrl(item.image_path)) : null }
 }
 
 export async function listItems(cursor, signal, filters = {}) {

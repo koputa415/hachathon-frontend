@@ -1,6 +1,5 @@
 import { ApiError, apiRequest } from './client.js'
 import { readItem } from './items.js'
-import { apiUrl } from './client.js'
 import { authenticatedRequest } from './session.js'
 
 export function readDraft(result) {
@@ -43,7 +42,7 @@ export async function prepareRelisting(purchaseId, signal) {
 
 export async function loadSourcePhoto(item, signal) {
   if (!item.image_path) return null
-  const response = await fetch(apiUrl(item.image_path), { signal: AbortSignal.any([signal, AbortSignal.timeout(15000)]), cache: 'no-store', credentials: 'omit' })
+  const response = await fetch(item.imageUrl, { signal: AbortSignal.any([signal, AbortSignal.timeout(15000)]), cache: 'no-store', credentials: 'omit' })
   const type = response.headers.get('content-type')?.split(';')[0]
   if (!response.ok || !['image/jpeg', 'image/png', 'image/webp'].includes(type)) throw new Error('写真を取得できませんでした。')
   const reader = response.body.getReader()
