@@ -14,7 +14,8 @@
     "test:items": "node tests/items.e2e.cjs",
     "test:purchases": "node tests/purchases.e2e.cjs",
     "test:ml": "node tests/ml.e2e.cjs",
-    "test:gemini": "node tests/gemini.e2e.cjs"
+    "test:gemini": "node tests/gemini.e2e.cjs",
+    "test:likes": "node tests/likes.e2e.cjs"
   },
   "dependencies": {
     "react": "^19.3.1",

@@ -1,11 +1,13 @@
-import { Button, ItemCard, HobbyIntroCard } from '../components/index.js'
+import { Button, ItemCard, HobbyIntroCard, LikeButton, LikesFeedback } from '../components/index.js'
 import { useItem } from '../hooks/useItem.js'
 import { itemCardProps } from '../utils/itemPresentation.js'
 import { useHobbyIntroduction } from '../hooks/useHobbyIntroduction.js'
+import { useItemLikes } from '../hooks/useItemLikes.js'
 import './pages.css'
 
-export default function ItemDetail({ itemId, userId, onShowListing, onPurchase }) {
+export default function ItemDetail({ itemId, userId, onShowListing, onPurchase, onRequireAuth }) {
   const { item, loading, error, notFound, retry } = useItem(itemId)
+  const likes = useItemLikes(item ? [item.id] : [], userId, onRequireAuth)
   const introduction = useHobbyIntroduction(itemId, item?.category)
   return (
     <div className="page-stack">
@@ -23,7 +25,8 @@ export default function ItemDetail({ itemId, userId, onShowListing, onPurchase }
       {!loading && item && <div className="detail-grid">
         <section className="page-stack" aria-labelledby="product-title">
           <h2 id="product-title">商品情報</h2>
-          <ItemCard {...itemCardProps(item)} />
+          <ItemCard {...itemCardProps(item)} likeControl={<LikeButton title={item.title} state={likes.values[item.id]} pending={likes.busy[item.id]} onClick={() => likes.toggle(item.id)} />} />
+          <LikesFeedback error={likes.error} onRetry={likes.retry} />
         </section>
         <section className="page-panel page-stack" aria-labelledby="description-title">
           <h2 id="description-title">商品の説明</h2>

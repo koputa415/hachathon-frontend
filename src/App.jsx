@@ -11,6 +11,7 @@ import PurchaseConfirm from './pages/PurchaseConfirm.jsx'
 import PurchaseComplete from './pages/PurchaseComplete.jsx'
 import PurchaseHistory from './pages/PurchaseHistory.jsx'
 import RelistingForm from './pages/RelistingForm.jsx'
+import MyPage from './pages/MyPage.jsx'
 import './App.css'
 
 export default function App() {
@@ -20,12 +21,13 @@ export default function App() {
   const purchaseMatch = path.match(/^#\/items\/([1-9]\d*)\/purchase$/)
   const relistMatch = path.match(/^#\/purchases\/([1-9]\d*)\/relist$/)
   const receiptMatch = path.match(/^#\/purchases\/([1-9]\d*)$/)
-  const protectedRoute = path === '#/listing' || path === '#/purchases' || Boolean(purchaseMatch || receiptMatch || relistMatch)
+  const protectedRoute = path === '#/listing' || path === '#/mypage' || path === '#/purchases' || Boolean(purchaseMatch || receiptMatch || relistMatch)
   const next = loginReturnTo(route)
   const navItems = [
     { id: 'home', label: 'ホーム', href: '#/' },
     { id: 'listing', label: '出品', href: '#/listing' },
     { id: 'purchases', label: '購入履歴', href: '#/purchases' },
+    { id: 'mypage', label: 'マイページ', href: '#/mypage' },
     ...(!auth.isAuthenticated ? [{ id: 'login', label: 'ログイン', href: '#/login' }] : []),
   ]
 
@@ -58,13 +60,16 @@ export default function App() {
       : <Login key={protectedRoute ? path : next} auth={auth} returnTo={protectedRoute ? path : next} />
   } else if (path === '#/') {
     currentId = 'home'
-    content = <Home key={`${route}-${auth.user?.id || 'guest'}`} userId={auth.user?.id} authStatus={auth.status} search={route.split('?')[1] || ''}
+    content = <Home key={`${route}-${auth.user?.id || 'guest'}`} userId={auth.user?.id} authStatus={auth.status} onRequireAuth={(id) => requireAuth(`#/items/${id}`)} search={route.split('?')[1] || ''}
       onSearch={({ q, category }) => {
         const query = new URLSearchParams()
         if (q) query.set('q', q)
         if (category) query.set('category', category)
         navigate(query.size ? `#/?${query}` : '#/')
       }} onOpenItem={(id) => navigate(`#/items/${id}`)} />
+  } else if (path === '#/mypage') {
+    currentId = 'mypage'
+    content = <MyPage key={auth.user.id} user={auth.user} onRequireAuth={() => requireAuth(path)} />
   } else if (relistMatch) {
     currentId = 'listing'
     content = <RelistingForm key={`${relistMatch[1]}-${auth.user.id}`} purchaseId={relistMatch[1]} onRequireAuth={() => requireAuth(path)} />
@@ -85,7 +90,7 @@ export default function App() {
     content = match ? (
       <ItemDetail key={`${match[1]}-${auth.user?.id || 'guest'}`} itemId={match[1]} userId={auth.user?.id}
         onPurchase={() => { if (requireAuth(`${path}/purchase`)) navigate(`${path}/purchase`) }}
-        onShowListing={() => navigate('#/listing')} />
+        onShowListing={() => navigate('#/listing')} onRequireAuth={() => requireAuth(path)} />
     ) : (
       <div className="page-stack"><h1>ページが見つかりません</h1><a className="page-link" href="#/">ホームに戻る</a></div>
     )

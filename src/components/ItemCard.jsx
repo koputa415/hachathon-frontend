@@ -11,6 +11,7 @@ export function ItemCard({
   imageAlt = '',
   href,
   reason,
+  likeControl,
 }) {
   return (
     <article className="ui-item-card">
@@ -31,6 +32,7 @@ export function ItemCard({
         </h3>
         <p className="ui-item-card__price">{priceLabel}</p>
         {reason && <p className="ui-item-card__reason">{reason}</p>}
+        {likeControl}
       </div>
     </article>
   )

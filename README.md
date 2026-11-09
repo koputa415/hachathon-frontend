@@ -368,3 +368,24 @@ Node.js 24でpackage-lock.jsonどおりにnpm ciを実行し、npm run lint、np
 修正をpushすると再実行されます。APIキーや本番DBへの接続は不要で、デプロイや自動マージは行いません。
 Actionsは読み取り専用権限、公式Actionはcommit SHAで固定しています。
 参照：[GitHub Actions Node.js](https://docs.github.com/en/actions/tutorials/build-and-test-code/nodejs)。
+
+
+## T8-2 いいねとマイページ
+
+| ファイル | 役割 |
+| --- | --- |
+| `src/api/likes.js` | 件数・本人状態の一括取得、認証付き登録・解除・いいね一覧の取得 |
+| `src/hooks/useItemLikes.js` | 一覧・詳細・マイページの取得状態、重複送信防止、古い応答破棄、画面移動後の再取得 |
+| `src/components/LikeButton.jsx` | 状態と件数をトークン経由で表示する共通ボタン |
+| `src/components/LikesFeedback.jsx` | いいね取得・操作失敗時の案内と再取得 |
+| `src/pages/MyPage.jsx` | 本人のいいね一覧、商品詳細・解除・追加読み込み、購入履歴への導線 |
+| `tests/likes.e2e.cjs` | 実APIでの一覧・詳細のいいね、本人別一覧、解除・再読込・失敗からの回復をブラウザで確認 |
+
+
+T8-2確認：lint・本番用ビルド、使い捨てAPI/DBにつないだブラウザ8ケースが成功。
+登録・解除、再読込、本人別一覧、24件の追加読込、連打、画面移動、通信失敗からの再取得、390px表示を確認。
+既存の購入ブラウザテスト8ケースも成功。
+通常のローカル確認は `http://localhost:5181/#/`。本番への反映は別途行います。
+テストは使い捨てDBを使うローカル画面を指定し、
+`LIKES_E2E_BASE_URL=http://localhost:5182 LIKES_E2E_ALLOW_WRITES=1 npm run test:likes` で実行します。
+公開サイトや通常のデータが入っているDBでは実行しないでください。

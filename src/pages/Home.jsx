@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react'
-import { Button, ItemCard } from '../components/index.js'
+import { Button, ItemCard, LikeButton, LikesFeedback } from '../components/index.js'
 import { listItems } from '../api/items.js'
 import { useHobbyClusters } from '../hooks/useHobbyClusters.js'
 import { itemCardProps } from '../utils/itemPresentation.js'
 import { useRecommendations } from '../hooks/useRecommendations.js'
+import { useItemLikes } from '../hooks/useItemLikes.js'
 import './pages.css'
 import './Home.css'
 
-export default function Home({ onOpenItem, search, onSearch, userId, authStatus }) {
+export default function Home({ onOpenItem, search, onSearch, userId, authStatus, onRequireAuth }) {
   const catalog = useHobbyClusters()
   const params = new URLSearchParams(search)
   const [filters, setFilters] = useState({ q: params.get('q') || '', category: params.get('category') || '' })
   const [request, setRequest] = useState({ cursor: null, q: filters.q, category: filters.category })
   const [page, setPage] = useState({ items: [], nextCursor: null, request: null, error: '' })
+  const likes = useItemLikes(page.items.map(item => item.id), userId, onRequireAuth)
   const loading = page.request !== request
   const discovery = useRecommendations(userId)
   const suggested = discovery.value?.recommendation
@@ -106,8 +108,11 @@ export default function Home({ onOpenItem, search, onSearch, userId, authStatus 
           <p>{request.q || request.category ? '条件に合う商品が見つかりませんでした。' : 'まだ商品が出品されていません。'}</p>
           {!request.q && !request.category && <a className="page-link" href="#/listing">最初の道具を出品する</a>}
         </div>}
+        <LikesFeedback error={likes.error} onRetry={likes.retry} />
         <div className="item-grid">
-          {page.items.map((item) => <ItemCard key={item.id} {...itemCardProps(item)} href={`#/items/${item.id}`} />)}
+          {page.items.map((item) => <ItemCard key={item.id} {...itemCardProps(item)} href={`#/items/${item.id}`} likeControl={
+            <LikeButton title={item.title} state={likes.values[item.id]} pending={likes.busy[item.id]} onClick={() => likes.toggle(item.id)} />
+          } />)}
         </div>
         {page.nextCursor !== null && !page.error && <div className="page-actions">
           <Button variant="secondary" disabled={loading} onClick={() => setRequest({ ...request, cursor: page.nextCursor })}>もっと見る</Button>

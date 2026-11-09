@@ -44,6 +44,14 @@ export async function apiRequest(path, { method = 'GET', body, token, signal, ti
         : '下書きを生成できませんでした。手入力して出品できます。'
       throw new ApiError(response.status, message)
     }
+    if (path.startsWith('/likes')) {
+      const message = response.status === 401 ? 'ログインの有効期限が切れました。もう一度ログインしてください。'
+        : response.status === 404 ? '商品が見つかりません。いいね情報を再取得してください。'
+        : response.status === 422 ? 'いいねする商品を確認してください。'
+        : method === 'GET' ? 'いいね情報を取得できませんでした。時間をおいてお試しください。'
+        : 'いいねの結果を確認できませんでした。いいね情報を再取得してください。'
+      throw new ApiError(response.status, message)
+    }
     if (path.startsWith('/recommendations')) {
       throw new ApiError(response.status, response.status === 401
         ? 'ログインの有効期限が切れました。もう一度ログインしてください。'
