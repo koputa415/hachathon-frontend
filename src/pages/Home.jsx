@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Button, ItemCard, LikeButton, LikesFeedback } from '../components/index.js'
 import { listItems } from '../api/items.js'
+import { DiscoveryCard } from '../components/DiscoveryCard.jsx'
+import { HobbyClusterChips } from '../components/HobbyClusterChips.jsx'
 import { useHobbyClusters } from '../hooks/useHobbyClusters.js'
 import { itemCardProps } from '../utils/itemPresentation.js'
 import { useRecommendations } from '../hooks/useRecommendations.js'
@@ -13,9 +15,21 @@ export default function Home({ onOpenItem, search, onSearch, userId, authStatus,
   const params = new URLSearchParams(search)
   const [filters, setFilters] = useState({ q: params.get('q') || '', category: params.get('category') || '' })
   const [request, setRequest] = useState({ cursor: null, q: filters.q, category: filters.category })
+  const [syncedSearch, setSyncedSearch] = useState(search)
+  // App が Home を再マウントしなくても、URL（例: #/?category=カメラ）の変更をフォームと一覧に反映する。
+  // 提案（useRecommendations）は userId だけに依存するため、検索の変更では再取得しない。
+  if (search !== syncedSearch) {
+    const next = new URLSearchParams(search)
+    const q = next.get('q') || '', category = next.get('category') || ''
+    setSyncedSearch(search)
+    setFilters({ q, category })
+    setRequest((previous) => previous.q === q && previous.category === category ? previous : { cursor: null, q, category })
+  }
   const [page, setPage] = useState({ items: [], nextCursor: null, request: null, error: '' })
   const likes = useItemLikes(page.items.map(item => item.id), userId, onRequireAuth)
   const loading = page.request !== request
+  // 新しい条件の読み込み中は古い結果の代わりにスケルトンを出す。追加読み込み中は既存の商品を残す。
+  const showSkeleton = loading && request.cursor === null
   const discovery = useRecommendations(userId)
   const suggested = discovery.value?.recommendation
   const allowed = (name) => name !== 'その他' && catalog.clusters.some((cluster) => cluster.name === name && cluster.recommendation_enabled)
@@ -36,36 +50,17 @@ export default function Home({ onOpenItem, search, onSearch, userId, authStatus,
   }, [request])
 
   return (
-    <div className="page-stack">
-      <section className="page-stack" aria-labelledby="home-title">
-        <h1 id="home-title">まだ知らない趣味に、気軽に出会える。</h1>
-        <p className="page-muted">趣味道具のフリマアプリ。試して合わなければ、また売れる。</p>
+    <div className="page-stack home">
+      <section className="home-hero" aria-labelledby="home-title">
+        <h1 id="home-title" className="home-hero__title">まだ知らない趣味に、気軽に出会える。</h1>
+        <p className="home-hero__sub">趣味道具のフリマアプリ。試して合わなければ、また売れる。</p>
       </section>
-      <section className="discovery-feature" aria-labelledby="discovery-title">
-        <h2 id="discovery-title">まだ知らない趣味{recommendation ? `：${recommendation.target_cluster}` : 'との出会い'}</h2>
-        {authStatus === 'checking' && <p role="status">ログイン状態を確認しています…</p>}
-        {!userId && authStatus !== 'checking' && <>
-          <p>ログインすると、購入・出品した趣味から新しい趣味の入口を提案します。</p>
-          <Button className="discovery-feature__cta" onClick={() => { window.location.hash = '#/login' }}>ログインして趣味を見つける</Button>
-        </>}
-        {userId && (discovery.loading || catalog.loading) && <p role="status">近い趣味を探しています…</p>}
-        {discovery.error && <div className="page-stack">
-          <p>{discovery.error}</p><Button variant="secondary" onClick={discovery.retry}>提案を再取得</Button>
-        </div>}
-        {recommendation && <>
-          <span className="discovery-feature__chip">{recommendation.reason_chip}</span>
-          <p>購入・出品した趣味から、まだ扱っていない趣味を提案しています。</p>
-          <p>{recommendation.item.title}</p>
-          <p className="page-muted">商品特徴と閲覧傾向をもとにした参考の提案です。</p>
-          <Button className="discovery-feature__cta" onClick={() => onOpenItem(recommendation.item.id)}>この道具を見てみる</Button>
-        </>}
-        {discovery.value?.reason_code === 'no_experience' && <p>購入・出品した趣味がまだありません。道具との出会いを重ねると、近い新しい趣味を提案します。</p>}
-        {discovery.value?.reason_code === 'no_unseen_items' && <p>今は新しく提案できる道具がありません。また見に来てください。</p>}
-        {suggested && !recommendation && !catalog.loading && !catalog.error && <p>今は新しく提案できる道具がありません。</p>}
-      </section>
+      <DiscoveryCard userId={userId} authStatus={authStatus} discovery={discovery} catalog={catalog}
+        recommendation={recommendation} suggested={suggested} onOpenItem={onOpenItem} />
       <section className="page-stack" aria-labelledby="items-title">
         <h2 id="items-title">趣味の道具をさがす</h2>
-        <form className="page-panel page-stack" role="search" onSubmit={(event) => {
+        <HobbyClusterChips clusters={catalog.clusters} titleId="hobby-chips-title" current={request.category} />
+        <form className="page-panel home-search" role="search" onSubmit={(event) => {
           event.preventDefault()
           if (catalog.loading || catalog.error) return
           const nextFilters = { ...filters, q: filters.q.trim() }
@@ -73,12 +68,12 @@ export default function Home({ onOpenItem, search, onSearch, userId, authStatus,
           if (nextFilters.q === request.q && nextFilters.category === request.category) setRequest({ ...request, cursor: null })
           else onSearch(nextFilters)
         }}>
-          <div className="form-field">
+          <div className="form-field home-search__field">
             <label htmlFor="items-search">キーワード</label>
             <input id="items-search" name="q" type="search" maxLength={100} placeholder="商品名・説明からさがす"
               value={filters.q} onChange={(event) => setFilters({ ...filters, q: event.target.value })} />
           </div>
-          <div className="form-field">
+          <div className="form-field home-search__field">
             <label htmlFor="items-category">カテゴリで絞り込む</label>
             <select id="items-category" name="category" value={filters.category}
               disabled={catalog.loading || Boolean(catalog.error)}
@@ -87,19 +82,19 @@ export default function Home({ onOpenItem, search, onSearch, userId, authStatus,
               {catalog.clusters.map((cluster) => <option key={cluster.id} value={cluster.name}>{cluster.name}</option>)}
             </select>
           </div>
-          {catalog.loading && <p role="status">カテゴリを読み込んでいます…</p>}
-          {catalog.error && <div className="page-error page-stack" role="alert">
-            <p>{catalog.error}</p><Button variant="secondary" onClick={catalog.retry}>カテゴリを再取得</Button>
-          </div>}
-          <div className="page-actions">
+          <div className="page-actions home-search__actions">
             <Button type="submit" disabled={catalog.loading || Boolean(catalog.error)}>検索する</Button>
             <a className="page-link" href="#/" onClick={() => {
               setFilters({ q: '', category: '' })
               setRequest({ cursor: null, q: '', category: '' })
             }}>条件をクリア</a>
           </div>
+          {catalog.loading && <p className="home-search__note" role="status">カテゴリを読み込んでいます…</p>}
+          {catalog.error && <div className="page-error page-stack home-search__note" role="alert">
+            <p>{catalog.error}</p><Button variant="secondary" onClick={catalog.retry}>カテゴリを再取得</Button>
+          </div>}
         </form>
-        {loading && <p role="status">商品を読み込んでいます…</p>}
+        {loading && <p className="page-muted" role="status">商品を読み込んでいます…</p>}
         {page.error && !loading && <div className="page-error page-stack" role="alert">
           <p>{page.error}</p>
           <Button variant="secondary" onClick={() => setRequest({ ...request })}>再試行</Button>
@@ -109,8 +104,11 @@ export default function Home({ onOpenItem, search, onSearch, userId, authStatus,
           {!request.q && !request.category && <a className="page-link" href="#/listing">最初の道具を出品する</a>}
         </div>}
         <LikesFeedback error={likes.error} onRetry={likes.retry} />
-        <div className="item-grid">
-          {page.items.map((item) => <ItemCard key={item.id} {...itemCardProps(item)} href={`#/items/${item.id}`} likeControl={
+        <div className="item-grid" aria-busy={loading}>
+          {showSkeleton && Array.from({ length: 6 }, (_, index) => <div key={index} className="home-skeleton" aria-hidden="true">
+            <div className="home-skeleton__image" /><div className="home-skeleton__line" /><div className="home-skeleton__line home-skeleton__line--short" />
+          </div>)}
+          {!showSkeleton && page.items.map((item) => <ItemCard key={item.id} {...itemCardProps(item)} href={`#/items/${item.id}`} likeControl={
             <LikeButton title={item.title} state={likes.values[item.id]} pending={likes.busy[item.id]} onClick={() => likes.toggle(item.id)} />
           } />)}
         </div>

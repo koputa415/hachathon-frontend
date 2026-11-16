@@ -81,7 +81,7 @@ export default function App() {
       : <Login key={protectedRoute ? path : next} auth={auth} returnTo={protectedRoute ? path : next} />
   } else if (path === '#/') {
     currentId = 'home'
-    content = <Home key={`${route}-${auth.user?.id || 'guest'}`} userId={auth.user?.id} authStatus={auth.status} onRequireAuth={(id) => requireAuth(`#/items/${id}`)} search={route.split('?')[1] || ''}
+    content = <Home key={`home-${auth.user?.id || 'guest'}`} userId={auth.user?.id} authStatus={auth.status} onRequireAuth={(id) => requireAuth(`#/items/${id}`)} search={route.split('?')[1] || ''}
       onSearch={({ q, category }) => {
         const query = new URLSearchParams()
         if (q) query.set('q', q)
