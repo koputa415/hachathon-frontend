@@ -32,8 +32,8 @@ async function run() {
     const seen = []
     page.on('response', response => { if (response.url() === imageUrl) seen.push(response.url()) })
     await page.goto(`${base}/#/items/${item.id}`)
-    const ready = () => page.waitForFunction(({ title, url }) => {
-      const image = [...document.images].find(image => image.alt === title)
+    const ready = () => page.waitForFunction(({ url }) => {
+      const image = [...document.images].find(image => image.currentSrc === url)
       return image?.complete && image.naturalWidth === 3 && image.currentSrc === url
     }, { title: fields.title, url: imageUrl })
     await ready()

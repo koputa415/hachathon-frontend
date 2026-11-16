@@ -14,6 +14,24 @@ import RelistingForm from './pages/RelistingForm.jsx'
 import MyPage from './pages/MyPage.jsx'
 import './App.css'
 
+/* ナビゲーション用の単色アイコン。色は currentColor で文字色に追従する。 */
+const iconPaths = {
+  home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',
+  listing: 'M12 5v14M5 12h14',
+  purchases: 'M6 7h12l-1 13H7zM9 7a3 3 0 0 1 6 0',
+  mypage: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0',
+  login: 'M10 17l5-5-5-5M15 12H3M14 4h5a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-5',
+}
+
+function NavIcon({ name }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+      <path d={iconPaths[name]} />
+    </svg>
+  )
+}
+
 export default function App() {
   const [route, navigate] = useHashRoute()
   const auth = useAuth()
@@ -23,12 +41,15 @@ export default function App() {
   const receiptMatch = path.match(/^#\/purchases\/([1-9]\d*)$/)
   const protectedRoute = path === '#/listing' || path === '#/mypage' || path === '#/purchases' || Boolean(purchaseMatch || receiptMatch || relistMatch)
   const next = loginReturnTo(route)
+  const primaryNavItems = [
+    { id: 'home', label: 'ホーム', href: '#/', icon: <NavIcon name="home" /> },
+    { id: 'listing', label: '出品', href: '#/listing', icon: <NavIcon name="listing" /> },
+    { id: 'purchases', label: '購入履歴', href: '#/purchases', icon: <NavIcon name="purchases" /> },
+    { id: 'mypage', label: 'マイページ', href: '#/mypage', icon: <NavIcon name="mypage" /> },
+  ]
   const navItems = [
-    { id: 'home', label: 'ホーム', href: '#/' },
-    { id: 'listing', label: '出品', href: '#/listing' },
-    { id: 'purchases', label: '購入履歴', href: '#/purchases' },
-    { id: 'mypage', label: 'マイページ', href: '#/mypage' },
-    ...(!auth.isAuthenticated ? [{ id: 'login', label: 'ログイン', href: '#/login' }] : []),
+    ...primaryNavItems,
+    ...(!auth.isAuthenticated ? [{ id: 'login', label: 'ログイン', href: '#/login', icon: <NavIcon name="login" /> }] : []),
   ]
 
   useEffect(() => {
@@ -102,12 +123,16 @@ export default function App() {
         event.preventDefault()
         document.getElementById('page-content')?.focus()
       }}>本文へ移動</a>
-      <Header homeHref="#/">
+      {/* ヘッダーのナビゲーションは 761px 以上、下部ナビは 760px 以下で表示する（App.css）。 */}
+      <Header homeHref="#/" navItems={primaryNavItems} currentId={currentId}>
         {auth.isAuthenticated ? <>
           <span className="app-user-name">{auth.user.display_name}さん</span>
           <Button variant="secondary" onClick={() => { navigate('#/'); auth.logout() }}>ログアウト</Button>
-        </> : <Button variant="secondary" disabled={auth.status === 'checking'} onClick={() => navigate(loginHash(path))}>ログイン</Button>}
-        <Button variant="secondary" onClick={() => navigate('#/listing')}>出品する</Button>
+        </> : <Button as="a" variant="secondary" href={loginHash(path)}
+          aria-disabled={auth.status === 'checking' || undefined}
+          onClick={auth.status === 'checking' ? (event) => event.preventDefault() : undefined}>ログイン</Button>}
+        {/* モバイルでは下部ナビの「出品」に集約する。e2e がボタンとして操作するため button のまま残す。 */}
+        <Button className="app-header-listing" onClick={() => navigate('#/listing')}>出品する</Button>
       </Header>
       {auth.notice && <div className="app-auth-feedback page-stack" role={auth.status === 'error' ? 'alert' : 'status'}>
         <p>{auth.notice}</p>

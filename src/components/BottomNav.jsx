@@ -12,7 +12,7 @@ export function BottomNav({ items = [], currentId, onNavigate, label = 'メイ�
               aria-current={item.id === currentId ? 'page' : undefined}
               onClick={onNavigate ? (event) => onNavigate(event, item) : undefined}
             >
-              {item.icon && <span aria-hidden="true">{item.icon}</span>}
+              {item.icon && <span className="ui-bottom-nav__icon" aria-hidden="true">{item.icon}</span>}
               <span>{item.label}</span>
             </a>
           </li>

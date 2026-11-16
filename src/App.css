@@ -1,10 +1,16 @@
 .app-shell {
   display: flex;
   flex-direction: column;
-  max-width: 1120px;
   min-height: 100svh;
-  margin: var(--space-0) auto;
 }
+/* ヘッダー背景は全幅、内容だけ最大幅に収める。 */
+.app-shell > :is(.app-main, .app-sample-note) {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--layout-max-width);
+  margin-inline: auto;
+}
+.app-shell > .ui-header { padding-inline: max(var(--space-4), calc((100% - var(--layout-max-width)) / 2 + var(--space-6))); }
 .app-main {
   flex: 1;
   min-width: 0;
@@ -16,7 +22,7 @@
   padding: var(--space-3) var(--space-6);
   background: var(--color-surface-muted);
   color: var(--color-text-secondary);
-  font-size: 0.875rem;
+  font-size: var(--font-size-sm);
 }
 .skip-link {
   position: absolute;
@@ -31,17 +37,54 @@
   transform: translateY(-200%);
 }
 .skip-link:focus { transform: translateY(0); }
-@media (max-width: 480px) {
-  .app-main { padding: var(--space-6) var(--space-4); }
-  .app-sample-note { padding: var(--space-3) var(--space-4); }
-}
 
 .app-user-name { max-width: 16rem; overflow-wrap: anywhere; color: var(--color-text-secondary); }
+
+/* ナビゲーションの出し分け：761px 以上はヘッダー、760px 以下は画面下に固定した下部ナビ。 */
+.app-shell > .ui-bottom-nav { display: none; }
+@media (max-width: 760px) {
+  .app-shell .ui-header__nav,
+  .app-header-listing { display: none; }
+  .app-shell > .ui-bottom-nav {
+    display: block;
+    position: sticky;
+    bottom: var(--space-0);
+    z-index: 10;
+    padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface);
+  }
+  .app-shell > .ui-bottom-nav .ui-bottom-nav__list { flex-wrap: nowrap; }
+  .app-shell > .ui-bottom-nav .ui-bottom-nav__list li { min-width: 0; }
+  /* 5項目を375px幅に収め、「マイページ」などのラベルを1行に保つ。 */
+  .app-shell > .ui-bottom-nav a { padding-inline: var(--space-0); white-space: nowrap; }
+  .app-main { padding-bottom: var(--space-12); }
+  .app-shell > .ui-header { padding: var(--space-3) var(--space-4); }
+  .app-shell .ui-header__actions { flex-wrap: nowrap; min-width: 0; }
+  .app-user-name {
+    max-width: 8rem;
+    overflow: hidden;
+    font-size: var(--font-size-sm);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+@media (max-width: 480px) {
+  .app-main { padding: var(--space-6) var(--space-4) var(--space-12); }
+  .app-sample-note { padding: var(--space-3) var(--space-4); }
+  .app-user-name { max-width: 5rem; }
+}
 .app-auth-feedback {
-  margin: var(--space-4) var(--space-6) var(--space-0);
+  box-sizing: border-box;
+  width: min(calc(100% - var(--space-12)), calc(var(--layout-max-width) - var(--space-12)));
+  margin: var(--space-4) auto var(--space-0);
   padding: var(--space-4);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-card);
   background: var(--color-surface);
   color: var(--color-text);
+}
+/* 320px 前後ではラベルを小さくして1行に保つ。 */
+@media (max-width: 360px) {
+  .app-shell > .ui-bottom-nav a { font-size: var(--font-size-xs); white-space: nowrap; }
 }

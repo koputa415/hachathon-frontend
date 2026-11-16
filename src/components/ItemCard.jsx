@@ -1,7 +1,10 @@
 import { StatusBadge } from './StatusBadge.jsx'
 import './components.css'
 
-/** priceLabel は「¥12,000」など、親で整形した表示文字列。 */
+/**
+ * priceLabel は「¥12,000」など、親で整形した表示文字列。
+ * href があるときはカード全体がリンクになる。画像の代替テキストはすぐ隣のタイトルと重複するため空にする。
+ */
 export function ItemCard({
   title,
   priceLabel,
@@ -14,10 +17,10 @@ export function ItemCard({
   likeControl,
 }) {
   return (
-    <article className="ui-item-card">
+    <article className={href ? 'ui-item-card ui-item-card--linked' : 'ui-item-card'}>
       <div className="ui-item-card__image">
         {imageSrc ? (
-          <img src={imageSrc} alt={imageAlt} loading="lazy" />
+          <img src={imageSrc} alt={href ? '' : imageAlt} loading="lazy" />
         ) : (
           <span className="ui-item-card__placeholder">画像準備中</span>
         )}
