@@ -177,6 +177,76 @@ src/utils/
 画面側の汎用関数（日付整形など）
 入れる：どこからでも使える純粋な関数。入れない：API呼び出し
 各所から使われる
+hackathon-frontend
+src/utils/format.js
+価格（formatPrice：￥12,345 形式）と日付（formatDate：2026/11/16 形式）の整形関数
+入れる：純粋関数のみ。入れない：API呼び出し、画面表示
+pages/・components/・utils/itemPresentation.js から使われる
+hackathon-frontend
+src/components/DiscoveryCard.jsx
+ホームの目玉カード「まだ知らない趣味」。購入・出品した趣味から未体験の近い趣味の道具を理由チップ付きで提案し、ゲスト／確認中／エラー／履歴なし／提案なしの各状態を表示する
+入れる：提案カードの表示。入れない：推薦の業務ロジック。コーラルを使える唯一のカード
+Home.jsx から直接 import される。スタイルは pages/Home.css
+hackathon-frontend
+src/components/HobbyClusterChips.jsx
+推薦対象の5趣味（その他と recommendation_enabled=false を除く）を `#/?category=…` へのカテゴリ絞り込みリンクのチップとして並べる部品
+入れる：趣味チップの表示。入れない：商品取得処理
+Home.jsx から使われる
+hackathon-frontend
+src/pages/ItemDetail.css
+商品詳細ページ専用スタイル（2カラム／モバイル縦積み、価格・事実表示、趣味紹介カード）
+入れる：トークン経由のスタイルのみ。入れない：直書きの色指定
+pages/ItemDetail.jsx から読まれ、theme/tokens.css を参照する
+hackathon-frontend
+src/pages/Purchase.css
+購入確認・購入完了・購入履歴ページ専用スタイル（`.purchase-*`）
+入れる：トークン経由のスタイルのみ。入れない：直書きの色指定
+購入系の pages/ から読まれ、theme/tokens.css を参照する
+hackathon-frontend
+src/pages/ListingForm.css
+出品フォーム・再出品ヘッダ・再出品準備画面の専用スタイル（AIパネル、AIバッジ、元商品カード、3ステップ進行表示、エラー表示）
+入れる：トークン経由のスタイルのみ。入れない：直書きの色指定
+ListingForm.jsx・RelistingForm.jsx から読まれ、theme/tokens.css を参照する
+hackathon-frontend
+src/pages/Login.css
+ログイン画面専用スタイル（エラー枠、パスワード表示切替、モード切替）
+入れる：トークン経由のスタイルのみ。入れない：直書きの色指定
+pages/Login.jsx から読まれ、theme/tokens.css を参照する
+hackathon-frontend
+src/pages/MyPage.css
+マイページ専用スタイル（プロフィール帯、カード風ナビ）
+入れる：トークン経由のスタイルのみ。入れない：直書きの色指定
+pages/MyPage.jsx から読まれ、theme/tokens.css を参照する
+hackathon-frontend
+src/pages/Home.css
+ホーム画面専用スタイル（目玉カード、趣味チップ、商品一覧）
+入れる：トークン経由のスタイルのみ。入れない：直書きの色指定
+pages/Home.jsx と DiscoveryCard.jsx から読まれ、theme/tokens.css を参照する
+hackathon-frontend
+src/pages/pages.css
+画面（pages/）共通のスタイル
+入れる：画面間で共通のレイアウト。入れない：画面固有のスタイル、直書きの色指定
+pages/ 全体から読まれ、theme/tokens.css を参照する
+hackathon-frontend
+src/components/components.css
+共通部品（components/）のスタイル
+入れる：部品のスタイル。入れない：画面固有のスタイル、直書きの色指定
+components/ 全体から読まれ、theme/tokens.css を参照する
+hackathon-frontend
+src/theme/tokens.css
+デザイントークン（色・角丸・余白）のCSS変数定義
+入れる：トークンの値だけ。入れない：部品や画面のスタイル
+全CSSが参照する
+hackathon-frontend
+src/App.css
+アプリ全体の枠組みのスタイル
+入れる：全体レイアウト。入れない：画面固有のスタイル、直書きの色指定
+App.jsx から読まれ、theme/tokens.css を参照する
+hackathon-frontend
+src/index.css
+グローバルのベーススタイル（リセット、基本のフォント・背景）
+入れる：全体共通のベース設定。入れない：部品や画面のスタイル
+エントリから読まれ、theme/tokens.css を参照する
 curriculum_10_oki_hashimoto（cdブランチ）
 cd/（バックエンドルート）
 サーバー側のコード全体（FastAPI）
@@ -257,3 +327,8 @@ cd/seed/
 自前シードデータ（デモ用商品）と投入スクリプト
 入れる：5趣味クラスタ分の商品データと投入処理。入れない：MerRecの実データ
 投入するとDBに入り、画面のデモ表示の元になる
+hackathon-frontend
+tests/home.e2e.cjs
+分離DBと実推薦APIを使った、目玉カード・趣味チップ・URL絞り込み・画面幅の接続確認
+入れる：ローカル専用ブラウザテスト。入れない：本番へのデータ投入
+READMEのtest:home手順で実行する

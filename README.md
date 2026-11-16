@@ -422,3 +422,25 @@ T8-2確認：lint・本番用ビルド、使い捨てAPI/DBにつないだブラ
 T10-2確認：ロール表示のブラウザ6ケース、既存認証のブラウザ14ケース、CDN単体7件、lint・buildが成功。
 一般からの直接API403、管理者の実API200、表示偽装でも拒否されることを確認した。
 本番の新API反映前にはDB移行が必要。`docs/roles.md`とバックエンドの`cd/docs/roles.md`を参照。
+
+
+## デザイン更新後の接続確認
+
+| ファイル | 役割 |
+| --- | --- |
+| `tests/home.e2e.cjs` | 分離DBの出品・本人履歴から返る実推薦を使い、目玉カード・5趣味チップ・URL絞り込み・モバイル表示を確認 |
+
+通常のデータを保持する環境や本番では実行せず、使い捨てPostgreSQL・GCS互換環境とローカルAPIを用意します。
+Geminiのブラウザテストには、バックエンドの `tests.gemini_preview` を使い、上流生成だけを固定応答にします。
+認証・商品・画像保存・ML推薦は実APIとDBで処理します。API接続先を `API_PROXY_TARGET`、
+フロントを `VITE_API_BASE_URL=/api` で設定し、通常画面とは別ポート（例5182）で起動します。
+
+```sh
+HOME_E2E_BASE_URL=http://localhost:5182 HOME_E2E_ALLOW_WRITES=1 npm run test:home
+```
+
+各既存e2eも、本READMEの `*_E2E_BASE_URL` と書き込み許可を同じ分離環境に指定して実行します。
+スクリーンショットと結果は `test-results/`（Git除外）、`HOME_E2E_OUTPUT_DIR`等で変更できます。
+管理者テストは、分離DBの検証用ユーザーだけを運用CLIで昇格させ、READMEのT10-2手順で実行します。
+画像CDNテストは別途ローカルWorkerと画像ベースURLを設定して実行します。
+`CLAUDE.md`は`AGENTS.md`と同じルールを共有するため追跡対象に含めます。
