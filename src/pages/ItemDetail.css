@@ -1,0 +1,62 @@
+/* 商品詳細（ItemDetail）専用。値はすべてデザイントークン経由。 */
+.detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+.detail-figure {
+  margin: var(--space-0);
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface-muted);
+}
+.detail-figure img { width: 100%; height: 100%; object-fit: cover; }
+.detail-figure__placeholder { color: var(--color-text-muted); font-size: var(--font-size-sm); }
+.detail-main, .detail-body, .detail-cta { display: grid; gap: var(--space-4); }
+.detail-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.detail-category { color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+.detail-title { margin: var(--space-0); font-size: var(--font-size-xl); line-height: var(--line-height-tight); overflow-wrap: anywhere; }
+.detail-price { margin: var(--space-0); color: var(--color-text); font-size: var(--font-size-2xl); font-weight: 700; }
+.detail-cta .ui-button, .detail-cta a.ui-button { display: inline-flex; justify-content: center; text-decoration: none; }
+.detail-section { display: grid; gap: var(--space-3); }
+.detail-section h2 { margin: var(--space-0); font-size: var(--font-size-lg); }
+.detail-body > a.ui-button { justify-self: start; display: inline-flex; justify-content: center; text-decoration: none; }
+.detail-number { margin: var(--space-0); color: var(--color-text-muted); font-size: var(--font-size-xs); }
+
+/* 趣味紹介カード（HobbyIntroCard） */
+.hobby-intro {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+.hobby-intro__head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.hobby-intro__head h2 { margin: var(--space-0); font-size: var(--font-size-lg); }
+.hobby-intro__badge {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-ai-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-ai-surface);
+  color: var(--color-ai);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+.hobby-intro__note { margin: var(--space-0); color: var(--color-text-muted); font-size: var(--font-size-xs); }
+.hobby-intro p { margin: var(--space-0); }
+
+@media (min-width: 761px) {
+  .detail-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-6) var(--space-8); }
+  .detail-figure { grid-row: span 2; }
+  .detail-body { grid-column: 2; }
+  .detail-title { font-size: var(--font-size-2xl); }
+  .detail-price { font-size: var(--font-size-hero); }
+}

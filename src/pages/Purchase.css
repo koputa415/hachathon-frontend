@@ -1,0 +1,83 @@
+/* 購入確認・購入完了・購入履歴の専用スタイル。値はすべてトークン経由。 */
+.purchase-info {
+  margin: var(--space-0);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-info-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-info-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+.purchase-form { display: grid; gap: var(--space-4); max-width: 560px; }
+.purchase-summary { display: flex; align-items: center; gap: var(--space-3); }
+.purchase-thumb {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  text-align: center;
+}
+.purchase-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.purchase-summary__body { display: grid; gap: var(--space-1); justify-items: start; min-width: 0; }
+.purchase-summary__title { margin: var(--space-0); font-weight: 700; overflow-wrap: anywhere; }
+.purchase-amount {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+.purchase-amount__label { color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+.purchase-amount__value { font-size: var(--font-size-hero); line-height: var(--line-height-tight); }
+.purchase-reassure { margin: var(--space-0); color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+.purchase-form .ui-button { justify-content: center; }
+
+.purchase-success {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  padding: var(--space-6);
+  border: 1px solid var(--color-secondary);
+  border-radius: var(--radius-card);
+  background: var(--color-success-surface);
+  color: var(--color-success);
+}
+.purchase-success h1 { margin: var(--space-0); }
+.purchase-success p { margin: var(--space-0); color: var(--color-text); }
+.purchase-success .purchase-number { color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+.purchase-success__icon { color: var(--color-secondary); }
+.purchase-relist {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-info-border);
+  border-radius: var(--radius-card);
+  background: var(--color-info-surface);
+}
+.purchase-relist h2 { margin: var(--space-0); font-size: var(--font-size-lg); }
+.purchase-relist p { margin: var(--space-0); }
+
+/* 購入履歴 */
+.purchase-list { display: grid; gap: var(--space-4); }
+.purchase-row { display: grid; gap: var(--space-3); }
+.purchase-row .ui-item-card { display: grid; grid-template-columns: 96px minmax(0, 1fr); align-items: stretch; }
+.purchase-row .ui-item-card__image { aspect-ratio: auto; height: 100%; min-height: 96px; }
+.purchase-row .ui-item-card__body { align-content: start; }
+.purchase-date { margin: var(--space-0); color: var(--color-text-muted); font-size: var(--font-size-sm); }
+.purchase-actions { display: grid; gap: var(--space-2); justify-items: start; }
+.purchase-actions__help { margin: var(--space-0); color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+.purchase-actions__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+
+@media (max-width: 760px) {
+  .purchase-actions, .purchase-actions__row { justify-items: stretch; }
+  .purchase-actions__row { flex-direction: column; align-items: stretch; }
+  .purchase-actions a.ui-button { width: 100%; }
+}

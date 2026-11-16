@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { Button, ItemCard } from '../components/index.js'
 import { listPurchases } from '../api/purchases.js'
 import { itemCardProps } from '../utils/itemPresentation.js'
+import { formatPrice, formatDate } from '../utils/format.js'
 import './pages.css'
+import './Purchase.css'
 
 export default function PurchaseHistory() {
   const [request, setRequest] = useState({ cursor: null })
@@ -30,14 +32,17 @@ export default function PurchaseHistory() {
     {!loading && !page.error && page.purchases.length === 0 && <section className="page-panel page-stack">
       <p>まだ購入した商品はありません。</p><a className="page-link" href="#/">道具をさがす</a>
     </section>}
-    <div className="item-grid">
-      {page.purchases.map((purchase) => <section className="page-stack" key={purchase.id} aria-label={`購入番号 ${purchase.id}`}>
-        <ItemCard {...itemCardProps(purchase.item)}
-          priceLabel={new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(purchase.price)}
+    <div className="purchase-list">
+      {page.purchases.map((purchase) => <section className="purchase-row" key={purchase.id} aria-label={`購入番号 ${purchase.id}`}>
+        <ItemCard {...itemCardProps(purchase.item)} status="purchased"
+          priceLabel={formatPrice(purchase.price)}
           href={`#/items/${purchase.item_id}`} />
-        <p className="page-muted">購入番号：{purchase.id}</p>
-        <a className="page-link" href={`#/purchases/${purchase.id}`}>購入結果を見る</a>
-        <a className="page-link" href={`#/purchases/${purchase.id}/relist`}>この道具を再出品する</a>
+        <p className="purchase-date">購入日：{formatDate(purchase.created_at)}　購入番号：{purchase.id}</p>
+        <div className="purchase-actions">
+          <Button as="a" href={`#/purchases/${purchase.id}/relist`}>この道具を再出品する</Button>
+          <p className="purchase-actions__help">合わなかったら、ワンタップで再出品。説明文はAIが作り直します。</p>
+          <a className="page-link" href={`#/purchases/${purchase.id}`}>購入結果を見る</a>
+        </div>
       </section>)}
     </div>
     {page.nextCursor !== null && !page.error && <div className="page-actions">
