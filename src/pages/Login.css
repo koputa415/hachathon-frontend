@@ -1,0 +1,44 @@
+/* ログイン・新規登録の専用スタイル。 */
+.login-error {
+  margin: var(--space-0);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-danger-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-danger-surface);
+  color: var(--color-danger);
+}
+.login-password { display: flex; gap: var(--space-2); align-items: stretch; }
+.login-password input { flex: 1; }
+.login-password button {
+  flex: none;
+  min-height: 44px;
+  padding: var(--space-0) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-button);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+.login-password button[aria-pressed="true"] { border-color: var(--color-primary); background: var(--color-info-surface); }
+.login-password button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: var(--space-1); box-shadow: var(--focus-ring); }
+.login-text-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: var(--space-0);
+  border: none;
+  line-height: var(--line-height-normal);
+  background: none;
+  color: var(--color-primary);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: var(--space-1);
+  cursor: pointer;
+}
+.login-text-button:disabled { color: var(--color-text-muted); cursor: default; }
+.login-text-button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: var(--space-1); box-shadow: var(--focus-ring); }
+.login-form .ui-button { width: 100%; }
+.auth-page .page-actions { align-items: center; }
+.auth-page .page-actions .page-link { display: inline-flex; align-items: center; min-height: 44px; line-height: var(--line-height-normal); }

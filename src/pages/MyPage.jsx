@@ -5,6 +5,7 @@ import { listLikedItems } from '../api/likes.js'
 import { useItemLikes } from '../hooks/useItemLikes.js'
 import { itemCardProps } from '../utils/itemPresentation.js'
 import './pages.css'
+import './MyPage.css'
 
 export default function MyPage({ user, onRequireAuth }) {
   const [request, setRequest] = useState({ cursor: null })
@@ -48,8 +49,14 @@ export default function MyPage({ user, onRequireAuth }) {
   }, [request])
   return <div className="page-stack">
     <h1>マイページ</h1>
-    <p>{user.display_name}さん</p>
-    <a className="page-link" href="#/purchases">購入履歴を見る</a>
+    <div className="mypage-profile">
+      <span className="mypage-avatar" aria-hidden="true">{[...(user.display_name || '')][0] || ''}</span>
+      <p className="mypage-name">{user.display_name}さん</p>
+    </div>
+    <nav className="mypage-nav" aria-label="マイページのメニュー">
+      <Button as="a" variant="secondary" href="#/purchases">購入履歴を見る</Button>
+      <Button as="a" variant="secondary" href="#/listing">出品する</Button>
+    </nav>
     <AdminAccessPanel role={user.role} phase={adminCheck.phase} error={adminCheck.error} onCheck={checkPermission} />
     <h2 tabIndex={-1} ref={heading}>いいねした商品</h2>
     {loading && <p role="status">いいね一覧を読み込んでいます…</p>}
