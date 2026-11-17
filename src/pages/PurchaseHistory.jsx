@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Button, ItemCard } from '../components/index.js'
-import { listPurchases } from '../api/purchases.js'
+import { Button, ItemCard, StatusBadge } from '../components/index.js'
+import { listPurchases, relistedItemId } from '../api/purchases.js'
 import { itemCardProps } from '../utils/itemPresentation.js'
 import { formatPrice, formatDate } from '../utils/format.js'
 import './pages.css'
@@ -39,8 +39,14 @@ export default function PurchaseHistory() {
           href={`#/items/${purchase.item_id}`} />
         <p className="purchase-date">購入日：{formatDate(purchase.created_at)}　購入番号：{purchase.id}</p>
         <div className="purchase-actions">
-          <Button as="a" href={`#/purchases/${purchase.id}/relist`}>この道具を再出品する</Button>
-          <p className="purchase-actions__help">合わなかったら、ワンタップで再出品。説明文はAIが作り直します。</p>
+          {relistedItemId(purchase) !== null ? <div className="purchase-relisted">
+            <StatusBadge status="relisted" />
+            <p className="purchase-relisted__text">この道具は再出品しました。</p>
+            <a className="page-link" href={`#/items/${relistedItemId(purchase)}`}>再出品した商品を見る</a>
+          </div> : <>
+            <Button as="a" href={`#/purchases/${purchase.id}/relist`}>この道具を再出品する</Button>
+            <p className="purchase-actions__help">合わなかったら、ワンタップで再出品。説明文はAIが作り直します。</p>
+          </>}
           <a className="page-link" href={`#/purchases/${purchase.id}`}>購入結果を見る</a>
         </div>
       </section>)}

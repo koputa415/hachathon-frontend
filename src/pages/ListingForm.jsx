@@ -16,6 +16,7 @@ export default function ListingForm({ onRequireAuth, initialListing }) {
   const [predictionInput, setPredictionInput] = useState({ title: initialListing?.item.title || '', category: initialListing?.item.category || '', condition: '' })
   const prediction = usePricePrediction(predictionInput)
   const [sourcePurchaseId, setSourcePurchaseId] = useState(initialListing?.purchase_id || null)
+  const [errorCode, setErrorCode] = useState('')
   const [image, setImage] = useState(initialListing?.imageFile || null)
   const [description, setDescription] = useState(initialListing?.description.text || initialListing?.item.description || '')
   const [descriptionFromAI, setDescriptionFromAI] = useState(initialListing?.description.ai_generated || false)
@@ -46,6 +47,7 @@ export default function ListingForm({ onRequireAuth, initialListing }) {
 
   function resetFeedback() {
     setError('')
+    setErrorCode('')
     setFieldErrors({})
   }
 
@@ -85,6 +87,8 @@ export default function ListingForm({ onRequireAuth, initialListing }) {
     const fields = {
       title: data.get('title').trim(), description: data.get('description').trim(),
       category: data.get('category'), condition: data.get('condition'), price: Number(data.get('price')),
+      // 再出品では元の購入記録を送り、サーバーが1購入1回の再出品を検証・記録する。
+      ...(sourcePurchaseId && initialListing?.linkPurchase ? { source_purchase_id: Number(sourcePurchaseId) } : {}),
     }
     resetFeedback()
     submitting.current = true
@@ -101,6 +105,7 @@ export default function ListingForm({ onRequireAuth, initialListing }) {
     } catch (failure) {
       if (failure.name !== 'AbortError') {
         setError(failure.message)
+        setErrorCode(failure.code || '')
         setFieldErrors(failure.fieldErrors || {})
       }
     } finally {
@@ -255,7 +260,12 @@ export default function ListingForm({ onRequireAuth, initialListing }) {
               {sourcePurchaseId && formatPrice(initialListing.item.price) && <p className="form-help">参考：前回の価格は{formatPrice(initialListing.item.price)}でした。</p>}
               {fieldError('price')}
             </div>
-            {error && <p className="listing-error-box" role="alert">{error}</p>}
+            {error && <div className="listing-error-box" role="alert">
+              <p>{error}</p>
+              {errorCode && <div className="listing-secondary-links">
+                <a className="page-link" href="#/purchases">購入履歴を確認する</a>
+              </div>}
+            </div>}
             <div className="page-actions">
               <Button type="submit" disabled={catalog.loading || Boolean(catalog.error)}>{pending ? '出品しています…' : '出品する'}</Button>
               <Button type="reset" variant="secondary">入力をクリア</Button>

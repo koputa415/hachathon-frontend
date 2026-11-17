@@ -199,7 +199,7 @@ src/components/HobbyMap.jsx
 MyPage.jsx から import される。スタイルは pages/MyPage.css
 hackathon-frontend
 src/components/RecentPurchases.jsx
-マイページの「最近の購入」。新しい購入数件を価格・購入日・購入済みバッジ付きで並べ、各行から「この道具を再出品する」へつなぐ表示部品
+マイページの「最近の購入」。新しい購入数件を価格・購入日・状態バッジ付きで並べ、未再出品は再出品導線、再出品済みは再出品先へのリンクを表示する部品
 入れる：購入行の表示と再出品への導線。入れない：購入の作成処理
 MyPage.jsx から import される。スタイルは pages/MyPage.css
 hackathon-frontend

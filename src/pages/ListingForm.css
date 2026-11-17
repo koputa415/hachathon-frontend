@@ -54,6 +54,8 @@
   background: var(--color-danger-surface);
   color: var(--color-danger);
 }
+div.listing-error-box { display: grid; gap: var(--space-2); }
+.listing-error-box p { margin: var(--space-0); }
 .listing-fields :is(input, select, textarea)[aria-invalid="true"] { border-color: var(--color-danger); }
 
 /* 再出品：元商品のコンパクトカード */

@@ -171,7 +171,9 @@
   font-size: var(--font-size-sm);
 }
 .recent-purchase__price { color: var(--color-text); font-weight: 700; }
-.recent-purchase__relist { margin-top: var(--space-1); }
+.recent-purchase__relist,
+.recent-purchase__relisted { margin-top: var(--space-1); }
+.recent-purchase__relisted { font-size: var(--font-size-sm); }
 
 .mypage-likes { margin-top: var(--space-2); }
 

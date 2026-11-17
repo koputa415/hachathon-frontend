@@ -76,6 +76,21 @@
 .purchase-actions__help { margin: var(--space-0); color: var(--color-text-secondary); font-size: var(--font-size-sm); }
 .purchase-actions__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
 
+/* 再出品済みの購入（再出品の導線は出さず、事実と新しい商品へのリンクだけを示す） */
+.purchase-relisted { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }
+.purchase-relisted__text { margin: var(--space-0); color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+.purchase-relisted-notice {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-secondary);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+}
+.purchase-relisted-notice h2 { margin: var(--space-0); font-size: var(--font-size-lg); }
+.purchase-relisted-notice p { margin: var(--space-0); }
+
 @media (max-width: 760px) {
   .purchase-actions, .purchase-actions__row { justify-items: stretch; }
   .purchase-actions__row { flex-direction: column; align-items: stretch; }

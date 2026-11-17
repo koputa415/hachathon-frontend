@@ -130,6 +130,7 @@ async function run() {
     await page.getByRole('heading', { name: '購入した道具を再出品する', exact: true }).waitFor()
     assert.match(await description.inputValue(), /再出品のための新しい下書き/)
     assert.equal(await page.getByLabel('商品名', { exact: true }).inputValue(), source.item.title)
+    await page.waitForFunction(() => document.querySelector('#listing-category')?.value === 'その他')
     assert.equal(await page.getByLabel('カテゴリ（趣味）', { exact: true }).inputValue(), 'その他')
     assert.equal(await page.getByLabel('商品の状態', { exact: true }).inputValue(), '')
     assert.equal(await page.getByLabel('価格（円）', { exact: true }).inputValue(), '')
@@ -147,7 +148,9 @@ async function run() {
     await page.screenshot({ path: path.join(output, 'relisting-edit.png'), fullPage: true })
     const newResponse = page.waitForResponse(response => response.url().endsWith('/api/items/with-image') && response.status() === 201)
     await page.locator('form').getByRole('button', { name: '出品する', exact: true }).click()
-    const relisted = await (await newResponse).json()
+    const relistedResponse = await newResponse
+    // Multipart file bodies may be streamed; verify the persisted purchase link below.
+    const relisted = await relistedResponse.json()
     await page.getByRole('heading', { name: '出品が完了しました', exact: true }).waitFor()
     assert.notEqual(relisted.id, source.item.id)
     assert.equal(relisted.category, 'その他')
@@ -178,6 +181,78 @@ async function run() {
     assert.equal(await page.getByLabel('商品名', { exact: true }).inputValue(), '')
     assert.equal(await description.inputValue(), '')
     checks.push('再出品後に続けて出品を選ぶと、元商品情報と再出品用の文脈を残さず空のフォームに戻る')
+    const sourceRecord = await (await context.request.get(`${base}/api/purchases/${source.purchase.id}`, { headers: { Authorization: `Bearer ${token}` } })).json()
+    assert.equal(sourceRecord.relisted_item_id, relisted.id)
+    await page.goto(`${base}/#/purchases`)
+    const relistedRow = page.getByRole('region', { name: `購入番号 ${source.purchase.id}`, exact: true })
+    await relistedRow.getByText('再出品済み', { exact: true }).waitFor()
+    assert.equal(await relistedRow.getByRole('link', { name: 'この道具を再出品する', exact: true }).count(), 0)
+    assert.equal(await relistedRow.getByRole('link', { name: '再出品した商品を見る', exact: true }).getAttribute('href'), `#/items/${relisted.id}`)
+    await page.goto(`${base}/#/purchases/${source.purchase.id}/relist`)
+    await page.getByRole('heading', { name: 'この道具は再出品済みです', exact: true }).waitFor()
+    assert.equal(await page.getByRole('heading', { name: '購入した道具を再出品する', exact: true }).count(), 0)
+    assert.equal(await page.getByRole('link', { name: '再出品した商品を見る', exact: true }).getAttribute('href'), `#/items/${relisted.id}`)
+    assert.equal(preparations, 1)
+    const duplicate = await context.request.post(`${base}/api/items`, { headers: { Authorization: `Bearer ${token}` }, data: {
+      title: `二重の再出品-${suffix}`, category: 'その他', description: '同じ購入からの2回目です。', condition: '未使用に近い', price: 1000, source_purchase_id: source.purchase.id,
+    } })
+    assert.equal(duplicate.status(), 409)
+    checks.push('再出品後は購入履歴に再出品済みと新しい商品へのリンクを表示し、再出品の導線と下書き生成を出さない。同じ購入からの2回目はサーバーが409で拒否')
+    for (const width of [1280, 375]) {
+      await page.setViewportSize({ width, height: width === 375 ? 812 : 1000 })
+      for (const [name, route] of [['history', '#/purchases'], ['mypage', '#/mypage'], ['complete', `#/purchases/${source.purchase.id}`]]) {
+        await page.goto(`${base}/${route}`)
+        await page.getByText('再出品済み', { exact: true }).waitFor()
+        assert.equal(await page.getByRole('link', { name: 'この道具を再出品する', exact: true }).count(), 0)
+        assert.equal(await page.getByRole('link', { name: '再出品した商品を見る', exact: true }).getAttribute('href'), `#/items/${relisted.id}`)
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false)
+        await page.screenshot({ path: path.join(output, `relisted-${name}-${width}.png`), fullPage: true })
+        await page.reload()
+        await page.getByText('再出品済み', { exact: true }).waitFor()
+        assert.equal(await page.getByRole('link', { name: 'この道具を再出品する', exact: true }).count(), 0)
+      }
+    }
+    await page.setViewportSize({ width: 1280, height: 1000 })
+    const headers = { Authorization: `Bearer ${token}` }
+    const blockedDraft = await context.request.post(`${base}/api/items/relisting-draft/${source.purchase.id}`, { headers })
+    assert.equal(blockedDraft.status(), 409)
+    const blockedRegeneration = await context.request.post(`${base}/api/items/description-draft`, { headers, multipart: {
+      item: JSON.stringify({ title: source.item.title, category: 'その他', condition: '未使用に近い', source_purchase_id: source.purchase.id }),
+      image: { name: 'source.png', mimeType: 'image/png', buffer: png },
+    } })
+    assert.equal(blockedRegeneration.status(), 409)
+    checks.push('実DBの再出品済み記録を履歴・マイページ・購入完了へ反映し、375px/1280pxと再読み込みでも再出品導線を出さない。直接の下書き生成も409')
+    const race = await purchased('その他', '別タブとの競合')
+    await page.goto(`${base}/#/purchases/${race.purchase.id}/relist`)
+    await page.getByRole('heading', { name: '購入した道具を再出品する', exact: true }).waitFor()
+    await page.getByLabel('商品の状態', { exact: true }).selectOption('未使用に近い')
+    await page.getByLabel('価格（円）', { exact: true }).fill('3000')
+    const competing = await context.request.post(`${base}/api/items`, { headers, data: {
+      title: race.item.title, category: 'その他', description: '別タブで先に再出品しました。', condition: '未使用に近い', price: 3000, source_purchase_id: race.purchase.id,
+    } })
+    assert.equal(competing.status(), 201)
+    const conflict = page.waitForResponse(r => r.url().endsWith('/api/items/with-image') && r.status() === 409)
+    await page.locator('form').getByRole('button', { name: '出品する', exact: true }).click()
+    await conflict
+    await page.getByRole('alert').filter({ hasText: 'すでに再出品しています' }).waitFor()
+    assert.equal(await page.getByRole('heading', { name: '出品が完了しました', exact: true }).count(), 0)
+    await page.reload()
+    await page.getByRole('heading', { name: 'この道具は再出品済みです', exact: true }).waitFor()
+    checks.push('別タブで先に再出品した後の古いフォームは実API409で失敗を表示し、完了扱いにせず、再読み込みで再出品済み案内になる')
+    const preparingRace = await purchased('その他', '下書き前の競合')
+    await page.route(`**/api/items/relisting-draft/${preparingRace.purchase.id}`, async route => {
+      const other = await context.request.post(`${base}/api/items`, { headers, data: {
+        title: preparingRace.item.title, category: 'その他', description: '下書きの直前に他のタブが再出品しました。', condition: '未使用に近い', price: 3000, source_purchase_id: preparingRace.purchase.id,
+      } })
+      assert.equal(other.status(), 201)
+      await route.continue()
+    })
+    await page.goto(`${base}/#/purchases/${preparingRace.purchase.id}/relist`)
+    await page.getByRole('heading', { name: 'この道具は再出品済みです', exact: true }).waitFor()
+    assert.equal(await page.getByRole('heading', { name: '購入した道具を再出品する', exact: true }).count(), 0)
+    await page.unroute(`**/api/items/relisting-draft/${preparingRace.purchase.id}`)
+    checks.push('購入情報の読取後・下書き生成前に他タブが再出品した場合も、409を再出品済み案内として表示する')
+
     const failedSource = await purchased('楽器', '生成失敗の再出品')
     await page.goto(`${base}/#/purchases/${failedSource.purchase.id}/relist`)
     await page.getByRole('heading', { name: '購入した道具を再出品する', exact: true }).waitFor()

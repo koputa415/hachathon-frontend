@@ -95,6 +95,12 @@ a.ui-button[aria-disabled='true'] { pointer-events: none; }
   color: var(--color-success);
 }
 
+.ui-status-badge--relisted {
+  border-color: var(--color-secondary);
+  background: var(--color-surface);
+  color: var(--color-secondary-strong);
+}
+
 .ui-item-card {
   position: relative;
   min-width: 0;

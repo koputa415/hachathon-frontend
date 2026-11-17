@@ -1,5 +1,6 @@
-import { Button, ItemCard } from '../components/index.js'
+import { Button, ItemCard, StatusBadge } from '../components/index.js'
 import { usePurchase } from '../hooks/usePurchase.js'
+import { relistedItemId } from '../api/purchases.js'
 import { itemCardProps } from '../utils/itemPresentation.js'
 import { formatPrice } from '../utils/format.js'
 import './pages.css'
@@ -26,11 +27,15 @@ export default function PurchaseComplete({ purchaseId }) {
       <div className="listing-preview"><ItemCard {...itemCardProps(purchase.item)}
         priceLabel={formatPrice(purchase.price)}
         href={`#/items/${purchase.item_id}`} /></div>
-      <section className="purchase-relist" aria-labelledby="purchase-relist-title">
+      {relistedItemId(purchase) !== null ? <section className="purchase-relisted-notice" aria-labelledby="purchase-relisted-title">
+        <h2 id="purchase-relisted-title">この道具は再出品済みです</h2>
+        <StatusBadge status="relisted" />
+        <a className="page-link" href={`#/items/${relistedItemId(purchase)}`}>再出品した商品を見る</a>
+      </section> : <section className="purchase-relist" aria-labelledby="purchase-relist-title">
         <h2 id="purchase-relist-title">試して合わなければ、また売れる。</h2>
         <p>使ってみて合わなかったら購入履歴からワンタップで再出品できます。</p>
         <Button as="a" variant="secondary" href={`#/purchases/${purchase.id}/relist`}>この道具を再出品する</Button>
-      </section>
+      </section>}
     </>}
     <div className="page-actions">
       <a className="page-link" href="#/purchases">購入履歴を見る</a>

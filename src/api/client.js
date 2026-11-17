@@ -31,6 +31,11 @@ export async function apiRequest(path, { method = 'GET', body, token, signal, ti
   const authPath = /^\/auth\/(register|login|me)$/.test(path)
   const configurationMessage = '認証サービスに接続できません。公開設定の確認が必要です。'
   if (!response.ok) {
+    if (response.status === 409 && (/^\/items\/relisting-draft\/[1-9]\d*$/.test(path) || path === '/items/description-draft')) {
+      const failure = new ApiError(409, 'この道具は再出品済みです。購入履歴から再出品した商品を確認してください。')
+      failure.code = 'purchase_already_relisted'
+      throw failure
+    }
     if (/^\/items\/relisting-draft\/[1-9]\d*$/.test(path)) {
       const message = response.status === 401 ? 'ログインの有効期限が切れました。もう一度ログインしてください。'
         : response.status === 404 ? '再出品できる購入記録が見つかりません。'
@@ -87,6 +92,13 @@ export async function apiRequest(path, { method = 'GET', body, token, signal, ti
         throw new ApiError(response.status, message)
       }
       let issues = []
+      let code = ''
+      if ([404, 409].includes(response.status)) {
+        try {
+          const data = await response.json()
+          if (['purchase_not_found', 'purchase_already_relisted'].includes(data?.detail?.code)) code = data.detail.code
+        } catch { /* 再出品の拒否以外の本文は表示しない。 */ }
+      }
       if (response.status === 422) {
         try {
           const data = await response.json()
@@ -97,14 +109,18 @@ export async function apiRequest(path, { method = 'GET', body, token, signal, ti
           }) : []
         } catch { /* 検証形式以外の本文は表示しない。 */ }
       }
-      const message = response.status === 401 ? 'ログインの有効期限が切れました。もう一度ログインしてください。'
+      const message = code === 'purchase_already_relisted' ? 'この購入した道具はすでに再出品しています。同じ購入から再出品できるのは1回だけです。'
+        : code === 'purchase_not_found' ? '再出品できる購入記録が見つかりません。購入履歴を確認してください。'
+        : response.status === 401 ? 'ログインの有効期限が切れました。もう一度ログインしてください。'
         : response.status === 413 ? '画像は5MB以下のファイルを選んでください。'
         : response.status === 415 ? 'JPEG・PNG・WebP形式の画像を選んでください。'
         : response.status === 422 ? '入力内容を確認してください。'
         : response.status === 503 ? '画像の保存先に接続できませんでした。時間をおいて、もう一度お試しください。'
         : [404, 405].includes(response.status) ? '出品サービスに接続できません。APIの公開設定を確認してください。'
         : 'サーバーで出品を完了できませんでした。時間をおいて、もう一度お試しください。'
-      throw new ApiError(response.status, message, issues)
+      const failure = new ApiError(response.status, message, issues)
+      if (code) failure.code = code
+      throw failure
     }
     const message = authPath && [404, 405].includes(response.status) ? configurationMessage
       : response.status === 401 ? 'メールアドレスまたはパスワードが正しくありません。'

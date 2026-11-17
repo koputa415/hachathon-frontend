@@ -7,10 +7,25 @@ function readPurchase(record) {
     || !Number.isSafeInteger(record.item_id) || record.item_id <= 0
     || !Number.isSafeInteger(record.buyer_id) || record.buyer_id <= 0
     || !Number.isSafeInteger(record.price) || record.price < 1
-    || typeof record.created_at !== 'string' || !Number.isFinite(Date.parse(record.created_at))) {
+    || typeof record.created_at !== 'string' || !Number.isFinite(Date.parse(record.created_at))
+    || (record.relisted_item_id !== undefined && record.relisted_item_id !== null
+      && (!Number.isSafeInteger(record.relisted_item_id) || record.relisted_item_id <= 0))) {
     throw new ApiError(0, '購入記録の応答を確認できませんでした。購入履歴を確認してください。')
   }
   return record
+}
+
+/**
+ * 再出品済みなら、再出品した商品のID（サーバーの購入記録 relisted_item_id）を返す。
+ * 未再出品、または項目を返さない旧APIでは null。
+ */
+export function relistedItemId(purchase) {
+  return purchase?.relisted_item_id ?? null
+}
+
+/** 購入記録の応答に relisted_item_id があれば、APIが再出品の記録に対応している。 */
+export function supportsRelistLink(purchase) {
+  return Boolean(purchase) && Object.hasOwn(purchase, 'relisted_item_id')
 }
 
 function readPurchaseWithItem(record) {

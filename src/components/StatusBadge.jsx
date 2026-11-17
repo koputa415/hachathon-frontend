@@ -6,6 +6,7 @@ const labels = {
   trading: '取引中',
   draft: '下書き',
   purchased: '購入済み',
+  relisted: '再出品済み',
 }
 
 /** API の状態値との対応付けは呼び出し側で行う。 */
