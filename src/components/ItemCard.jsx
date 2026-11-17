@@ -4,6 +4,7 @@ import './components.css'
 /**
  * priceLabel は「¥12,000」など、親で整形した表示文字列。
  * href があるときはカード全体がリンクになる。画像の代替テキストはすぐ隣のタイトルと重複するため空にする。
+ * keepImageAlt を指定したときだけ、href があっても imageAlt を残す（出品完了表示など）。
  */
 export function ItemCard({
   title,
@@ -13,6 +14,7 @@ export function ItemCard({
   imageSrc,
   imageAlt = '',
   href,
+  keepImageAlt = false,
   reason,
   likeControl,
 }) {
@@ -20,7 +22,7 @@ export function ItemCard({
     <article className={href ? 'ui-item-card ui-item-card--linked' : 'ui-item-card'}>
       <div className="ui-item-card__image">
         {imageSrc ? (
-          <img src={imageSrc} alt={href ? '' : imageAlt} loading="lazy" />
+          <img src={imageSrc} alt={href && !keepImageAlt ? '' : imageAlt} loading="lazy" />
         ) : (
           <span className="ui-item-card__placeholder">画像準備中</span>
         )}

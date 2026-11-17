@@ -153,6 +153,30 @@ async function run() {
     checks.push('送信中の重複submitを抑止し、1件だけ作成する')
     checks.push('375pxのフォームと完了表示に横スクロールがない')
 
+    await page.setViewportSize({ width: 1280, height: 900 })
+    const completedCard = page.locator('.listing-preview .ui-item-card')
+    assert.equal(await completedCard.getByRole('link', { name: title, exact: true }).getAttribute('href'), `#/items/${item.id}`)
+    // Real pointer clicks hit the stretched link, rather than dispatching a DOM event on an obscured child.
+    for (const selector of ['.ui-item-card__image', '.ui-item-card__meta', '.ui-item-card__title', '.ui-item-card__price', null]) {
+      await completedCard.scrollIntoViewIfNeeded()
+      const box = await (selector ? completedCard.locator(selector) : completedCard).boundingBox()
+      const opened = context.waitForEvent('page')
+      await page.keyboard.down('Control')
+      try { await page.mouse.click(box.x + box.width / 2, selector ? box.y + box.height / 2 : box.y + box.height - 4) }
+      finally { await page.keyboard.up('Control') }
+      const target = await opened
+      await target.waitForURL(`${base}/#/items/${item.id}`)
+      await target.getByRole('heading', { name: title, exact: true }).waitFor()
+      await target.close()
+    }
+    const fromKeyboard = context.waitForEvent('page')
+    await completedCard.getByRole('link', { name: title, exact: true }).focus()
+    await page.keyboard.press('Control+Enter')
+    const keyboardTarget = await fromKeyboard
+    await keyboardTarget.waitForURL(`${base}/#/items/${item.id}`)
+    await keyboardTarget.close()
+    checks.push('出品完了カードの画像・カテゴリ帯・タイトル・価格・余白が詳細リンクとして動き、キーボードでも開ける')
+
     const detailLink = page.getByRole('link', { name: '商品詳細を見る', exact: true })
     assert.equal(await detailLink.getAttribute('href'), `#/items/${item.id}`)
     const detail = await context.newPage()

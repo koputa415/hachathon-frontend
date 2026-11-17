@@ -159,6 +159,19 @@ async function run() {
     assert.equal(oldItem.description, source.item.description)
     assert.equal(oldItem.price, 2500)
     assert.equal((await context.request.get(`${base}/api/items/${relisted.id}/image`)).status(), 200)
+    const relistedCard = page.locator('.listing-preview .ui-item-card')
+    assert.equal(await relistedCard.getByRole('link', { name: relisted.title, exact: true }).getAttribute('href'), `#/items/${relisted.id}`)
+    await relistedCard.scrollIntoViewIfNeeded()
+    const photoBox = await relistedCard.locator('.ui-item-card__image').boundingBox()
+    const openedDetail = context.waitForEvent('page')
+    await page.keyboard.down('Control')
+    try { await page.mouse.click(photoBox.x + photoBox.width / 2, photoBox.y + photoBox.height / 2) }
+    finally { await page.keyboard.up('Control') }
+    const relistedDetail = await openedDetail
+    await relistedDetail.waitForURL(`${base}/#/items/${relisted.id}`)
+    await relistedDetail.getByRole('heading', { name: relisted.title, exact: true }).waitFor()
+    await relistedDetail.close()
+    checks.push('再出品完了カードの画像から、元商品ではなく新しく作った商品の詳細が開く')
     checks.push('履歴から1回の操作でその他の再出品下書きを自動生成。写真を引き継ぎ、現状・価格・生成文を編集して別商品として保存し、元の売却済み商品を保持')
     await page.getByRole('button', { name: '続けて出品する', exact: true }).click()
     await page.getByRole('heading', { name: '道具を出品する', exact: true }).waitFor()

@@ -145,7 +145,7 @@ export default function ListingForm({ onRequireAuth, initialListing }) {
           <p className="page-notice" role="status">商品番号：{created.id}。商品と画像を保存しました。</p>
           <div className="listing-preview"><ItemCard title={created.title} categoryLabel={created.category}
             priceLabel={formatPrice(created.price)}
-            imageSrc={created.imageUrl} imageAlt={created.title} status="available" /></div>
+            imageSrc={created.imageUrl} imageAlt={created.title} keepImageAlt href={`#/items/${created.id}`} status="available" /></div>
           <p>{created.condition}</p>
           <p className="page-preserve-lines">{created.description}</p>
           <div className="page-actions">
