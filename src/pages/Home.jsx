@@ -99,7 +99,7 @@ export default function Home({ onOpenItem, search, onSearch, userId, authStatus,
           <p>{page.error}</p>
           <Button variant="secondary" onClick={() => setRequest({ ...request })}>再試行</Button>
         </div>}
-        {!loading && !page.error && page.items.length === 0 && <div className="page-panel page-stack">
+        {!loading && !page.error && page.items.length === 0 && page.nextCursor === null && <div className="page-panel page-stack">
           <p>{request.q || request.category ? '条件に合う商品が見つかりませんでした。' : 'まだ商品が出品されていません。'}</p>
           {!request.q && !request.category && <a className="page-link" href="#/listing">最初の道具を出品する</a>}
         </div>}

@@ -117,9 +117,10 @@ async function run() {
     await page.getByText('この商品は売却済みです。', { exact: true }).waitFor()
     assert.equal(await page.getByRole('button', { name: '購入手続きへ', exact: true }).count(), 0)
     await page.goto(`${base}/#/`)
-    const soldCard = page.locator('.ui-item-card').filter({ has: page.getByRole('link', { name: normal.title, exact: true }) })
-    await soldCard.getByText('売却済み', { exact: true }).waitFor()
-    checks.push('実APIで購入し、重複送信は1回に抑止。完了と履歴は再読み込みでも残り、一覧と詳細が売却済みになる')
+    // 売却済みは一覧に出ない（詳細・購入履歴では売却済みとして残る）。
+    await page.locator('.ui-item-card').first().waitFor()
+    assert.equal(await page.getByRole('link', { name: normal.title, exact: true }).count(), 0)
+    checks.push('実APIで購入し、重複送信は1回に抑止。完了と履歴は再読み込みでも残り、詳細は売却済みで、一覧には出ない')
 
     const otherContext = await browser.newContext()
     const contender = await otherContext.newPage()

@@ -46,7 +46,12 @@ export function readItem(item) {
   return { ...item, imageUrl: item.image_path ? imageUrl(item.image_path, import.meta.env.VITE_ITEM_IMAGE_BASE_URL, apiUrl(item.image_path)) : null }
 }
 
-export async function listItems(cursor, signal, filters = {}) {
+// 売却済みは一覧に出さない。バックエンドに状態フィルタが無い間の暫定として、
+// 取得したページから売却済みを除く。全件が売却済みでカーソルが残る場合は、
+// 上限（MAX_SKIP_PAGES）まで次ページを続けて取得し、一覧が空に見えないようにする。
+const MAX_SKIP_PAGES = 5
+
+async function fetchItemsPage(cursor, signal, filters) {
   const query = new URLSearchParams({ limit: '24' })
   if (cursor !== null) query.set('before_id', String(cursor))
   if (filters.q) query.set('q', filters.q)
@@ -57,6 +62,16 @@ export async function listItems(cursor, signal, filters = {}) {
     throw new ApiError(0, '商品一覧を確認できませんでした。もう一度お試しください。')
   }
   return { items: page.items.map(readItem), nextCursor: page.next_cursor }
+}
+
+export async function listItems(cursor, signal, filters = {}) {
+  let page = await fetchItemsPage(cursor, signal, filters)
+  let items = page.items.filter((item) => item.status !== 'sold')
+  for (let skipped = 0; items.length === 0 && page.nextCursor !== null && skipped < MAX_SKIP_PAGES; skipped += 1) {
+    page = await fetchItemsPage(page.nextCursor, signal, filters)
+    items = page.items.filter((item) => item.status !== 'sold')
+  }
+  return { items, nextCursor: page.nextCursor }
 }
 
 export async function getItem(id, signal) {

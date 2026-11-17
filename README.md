@@ -459,3 +459,15 @@ LIGHTBOX_E2E_BASE_URL=http://localhost:5182 LIGHTBOX_E2E_ALLOW_WRITES=1 npm run 
 ```
 
 `PLAYWRIGHT_BROWSER=webkit`でも実行可能です。WebKit実行はiOS Safari実機の確認とは区別します。
+
+## 売却済みの一覧除外の確認
+
+| ファイル | 役割 |
+| --- | --- |
+| `tests/catalog-status.e2e.cjs` | 実購入した商品が一覧・検索・カテゴリから除かれ、ページ送りと詳細・履歴・いいね一覧には影響しないことを確認 |
+
+```sh
+CATALOG_E2E_BASE_URL=http://localhost:5182 CATALOG_E2E_ALLOW_WRITES=1 npm run test:catalog
+```
+
+売却済み除外はバックエンドへのstatusフィルタ追加までの暫定対応です。
