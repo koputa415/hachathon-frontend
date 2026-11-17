@@ -10,3 +10,4 @@ export { LikeButton } from './LikeButton.jsx'
 export { LikesFeedback } from './LikesFeedback.jsx'
 
 export { AdminAccessPanel } from './AdminAccessPanel.jsx'
+export { ImageLightbox } from './ImageLightbox.jsx'

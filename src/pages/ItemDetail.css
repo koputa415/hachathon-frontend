@@ -16,7 +16,9 @@
   border-radius: var(--radius-card);
   background: var(--color-surface-muted);
 }
-.detail-figure img { width: 100%; height: 100%; object-fit: cover; }
+.detail-figure__zoom { display: block; width: 100%; height: 100%; padding: var(--space-0); border: 0; background: none; cursor: zoom-in; }
+.detail-figure__zoom:focus-visible { outline: none; box-shadow: inset var(--focus-ring); }
+.detail-figure__zoom img, .detail-figure > img { width: 100%; height: 100%; object-fit: cover; }
 .detail-figure__placeholder { color: var(--color-text-muted); font-size: var(--font-size-sm); }
 .detail-main, .detail-body, .detail-cta { display: grid; gap: var(--space-4); }
 .detail-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }

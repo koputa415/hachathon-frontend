@@ -1,4 +1,5 @@
-import { Button, StatusBadge, HobbyIntroCard, LikeButton, LikesFeedback } from '../components/index.js'
+import { useRef, useState } from 'react'
+import { Button, StatusBadge, HobbyIntroCard, LikeButton, LikesFeedback, ImageLightbox } from '../components/index.js'
 import { useItem } from '../hooks/useItem.js'
 import { useHobbyIntroduction } from '../hooks/useHobbyIntroduction.js'
 import { useItemLikes } from '../hooks/useItemLikes.js'
@@ -10,6 +11,8 @@ export default function ItemDetail({ itemId, userId, onPurchase, onRequireAuth }
   const { item, loading, error, notFound, retry } = useItem(itemId)
   const likes = useItemLikes(item ? [item.id] : [], userId, onRequireAuth)
   const introduction = useHobbyIntroduction(itemId, item?.category)
+  const [zoomed, setZoomed] = useState(false)
+  const trigger = useRef(null)
   const sold = item?.status === 'sold'
   const own = item?.seller_id === userId
   return (
@@ -27,8 +30,11 @@ export default function ItemDetail({ itemId, userId, onPurchase, onRequireAuth }
       {!loading && item && <article className="detail-layout">
         <figure className="detail-figure">
           {item.imageUrl
-            ? <img src={item.imageUrl} alt={item.title} />
+            ? <button type="button" ref={trigger} className="detail-figure__zoom" aria-label="写真を拡大表示" onClick={() => setZoomed(true)}>
+              <img src={item.imageUrl} alt={item.title} />
+            </button>
             : <span className="detail-figure__placeholder">画像準備中</span>}
+          {zoomed && item.imageUrl && <ImageLightbox src={item.imageUrl} title={item.title} onClose={() => { setZoomed(false); trigger.current?.focus() }} />}
         </figure>
         <div className="detail-main">
           <div className="detail-meta">

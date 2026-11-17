@@ -19,7 +19,8 @@
     "test:cdn": "node --test tests/image-cdn.test.mjs",
     "test:images": "node tests/image-cdn.e2e.cjs",
     "test:roles": "node tests/roles.e2e.cjs",
-    "test:home": "node tests/home.e2e.cjs"
+    "test:home": "node tests/home.e2e.cjs",
+    "test:lightbox": "node tests/lightbox.e2e.cjs"
   },
   "dependencies": {
     "react": "^19.3.1",

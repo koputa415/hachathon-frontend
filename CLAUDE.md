@@ -193,6 +193,11 @@ src/components/HobbyClusterChips.jsx
 入れる：趣味チップの表示。入れない：商品取得処理
 Home.jsx から使われる
 hackathon-frontend
+src/components/ImageLightbox.jsx
+写真の全画面表示（ライトボックス）。ネイティブの <dialog> と showModal() で、フォーカス閉じ込め・Escで閉じる・背景クリックで閉じる・右上の閉じるボタンを備える。開いている間だけマウントする
+入れる：全画面表示の部品。入れない：画像の取得処理、トリガーのボタン
+ItemDetail.jsx の主画像ボタンから使われる。スタイルは components/components.css、色は theme/tokens.css のオーバーレイ系トークン
+hackathon-frontend
 src/pages/ItemDetail.css
 商品詳細ページ専用スタイル（2カラム／モバイル縦積み、価格・事実表示、趣味紹介カード）
 入れる：トークン経由のスタイルのみ。入れない：直書きの色指定

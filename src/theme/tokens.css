@@ -19,6 +19,9 @@
   --color-text-on-primary: var(--color-white);
   --color-primary: #4F46E5; /* インディゴ */
   --color-secondary: #0D9488; /* ティール（補助色） */
+  --color-overlay: rgba(15, 23, 42, 0.92); /* 写真の全画面表示の背景 */
+  --color-on-overlay: #FFFFFF; /* オーバーレイ上の文字・アイコン */
+  --color-overlay-control: rgba(255, 255, 255, 0.16); /* オーバーレイ上のボタン背景 */
 
   /* コーラル：「まだ知らない趣味」の目玉カードの CTA・チップ・上部ライン専用。
      通常のボタン・価格表示・ナビゲーションには使わない。 */

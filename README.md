@@ -444,3 +444,18 @@ HOME_E2E_BASE_URL=http://localhost:5182 HOME_E2E_ALLOW_WRITES=1 npm run test:hom
 管理者テストは、分離DBの検証用ユーザーだけを運用CLIで昇格させ、READMEのT10-2手順で実行します。
 画像CDNテストは別途ローカルWorkerと画像ベースURLを設定して実行します。
 `CLAUDE.md`は`AGENTS.md`と同じルールを共有するため追跡対象に含めます。
+
+
+## 写真の全画面表示の確認
+
+| ファイル | 役割 |
+| --- | --- |
+| `tests/lightbox.e2e.cjs` | 実画像を保存し、閉じる操作・フォーカス・スクロール復帰をEdge/WebKitで確認 |
+
+使い捨てDBにつないだローカル画面を指定して実行します。
+
+```sh
+LIGHTBOX_E2E_BASE_URL=http://localhost:5182 LIGHTBOX_E2E_ALLOW_WRITES=1 npm run test:lightbox
+```
+
+`PLAYWRIGHT_BROWSER=webkit`でも実行可能です。WebKit実行はiOS Safari実機の確認とは区別します。
