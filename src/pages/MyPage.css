@@ -1,13 +1,19 @@
-/* マイページの専用スタイル。 */
+/* マイページの専用スタイル（プロフィール帯、趣味マップ、最近の購入、いいね一覧の見出し）。
+   HobbyMap.jsx・RecentPurchases.jsx はマイページ専用の部品のため、スタイルもここに置く。 */
 .mypage-profile {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-4);
-  padding: var(--space-4);
+  padding: var(--space-4) var(--space-6);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-card);
   background: var(--color-surface);
+  box-shadow: var(--shadow-card);
 }
+.mypage-profile__identity { display: flex; align-items: center; gap: var(--space-4); min-width: 0; }
+.mypage-profile__text { display: grid; gap: var(--space-1); min-width: 0; }
 .mypage-avatar {
   display: grid;
   place-items: center;
@@ -21,5 +27,165 @@
   font-weight: 700;
 }
 .mypage-name { margin: var(--space-0); font-size: var(--font-size-lg); font-weight: 600; overflow-wrap: anywhere; }
+.mypage-email {
+  margin: var(--space-0);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  overflow-wrap: anywhere;
+}
+.mypage-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-0);
+}
+.mypage-stat {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 96px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+}
+.mypage-stat dt { color: var(--color-text-secondary); font-size: var(--font-size-xs); }
+.mypage-stat dd { margin: var(--space-0); font-size: var(--font-size-lg); font-weight: 700; line-height: var(--line-height-tight); }
+
 .mypage-nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
 .mypage-nav .ui-button { width: 100%; justify-content: center; box-sizing: border-box; }
+
+/* セクションカード。PC は2カラム、スマートフォンは縦積み。 */
+.mypage-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+.mypage-card {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+  padding: var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+.mypage-card__head { display: grid; gap: var(--space-1); }
+.mypage-card__title { margin: var(--space-0); font-size: var(--font-size-xl); line-height: var(--line-height-tight); }
+.mypage-card__title:focus-visible { outline: 2px solid var(--color-primary); outline-offset: var(--space-1); }
+.mypage-card__lead,
+.mypage-card__text { margin: var(--space-0); color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+.mypage-card__text { color: var(--color-text); }
+.mypage-card__more { justify-self: start; font-weight: 600; }
+.mypage-note { margin: var(--space-0); color: var(--color-text-muted); font-size: var(--font-size-xs); }
+.mypage-empty { display: grid; gap: var(--space-2); justify-items: start; }
+.mypage-error { display: grid; gap: var(--space-3); justify-items: start; }
+.mypage-error p { margin: var(--space-0); }
+
+/* 趣味マップ：購入した趣味はティール、これから出会う趣味は点線のニュートラル。 */
+.hobby-map__count { color: var(--color-secondary-strong); font-size: var(--font-size-md); }
+.hobby-map {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: var(--space-2);
+  margin: var(--space-0);
+  padding: var(--space-0);
+  list-style: none;
+}
+.hobby-map__tile {
+  display: grid;
+  gap: var(--space-1);
+  height: 100%;
+  box-sizing: border-box;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  text-decoration: none;
+}
+.hobby-map__tile--tried {
+  border-color: var(--color-ai-border);
+  background: var(--color-ai-surface);
+}
+.hobby-map__tile--new { border-style: dashed; }
+.hobby-map__tile:hover { border-color: var(--color-primary); }
+.hobby-map__tile:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; box-shadow: var(--focus-ring); }
+.hobby-map__name { font-weight: 700; }
+.hobby-map__state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+.hobby-map__tile--tried .hobby-map__state { color: var(--color-secondary-strong); font-weight: 600; }
+.hobby-map__icon { width: 14px; height: 14px; flex: none; }
+
+/* 最近の購入 */
+.recent-purchases { display: grid; gap: var(--space-3); margin: var(--space-0); padding: var(--space-0); list-style: none; }
+.recent-purchase {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+.recent-purchase:last-child { padding-bottom: var(--space-0); border-bottom: none; }
+.recent-purchase__thumb {
+  display: grid;
+  place-items: center;
+  width: 88px;
+  height: 88px;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+.recent-purchase__thumb img { width: 100%; height: 100%; object-fit: cover; }
+.recent-purchase__placeholder { color: var(--color-text-muted); font-size: var(--font-size-xs); }
+.recent-purchase__body { display: grid; gap: var(--space-1); justify-items: start; min-width: 0; }
+.recent-purchase__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+.recent-purchase__title {
+  max-width: 100%;
+  color: var(--color-text);
+  font-weight: 600;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.recent-purchase__title:hover { color: var(--color-primary); text-decoration: underline; }
+.recent-purchase__title:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; border-radius: var(--radius-sm); }
+.recent-purchase__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: var(--space-0);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+.recent-purchase__price { color: var(--color-text); font-weight: 700; }
+.recent-purchase__relist { margin-top: var(--space-1); }
+
+.mypage-likes { margin-top: var(--space-2); }
+
+@media (max-width: 760px) {
+  .mypage-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 480px) {
+  .mypage-profile { padding: var(--space-4); }
+  .mypage-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: var(--space-1); width: 100%; }
+  .mypage-stat { min-width: 0; padding: var(--space-2); }
+  .mypage-stat dt { white-space: nowrap; }
+  .mypage-card { padding: var(--space-4); }
+  .hobby-map { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .recent-purchase { grid-template-columns: 72px minmax(0, 1fr); }
+  .recent-purchase__thumb { width: 72px; height: 72px; }
+  .recent-purchase__relist { width: 100%; justify-content: center; box-sizing: border-box; }
+}

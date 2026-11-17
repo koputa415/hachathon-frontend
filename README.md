@@ -471,3 +471,15 @@ CATALOG_E2E_BASE_URL=http://localhost:5182 CATALOG_E2E_ALLOW_WRITES=1 npm run te
 ```
 
 売却済み除外はバックエンドへのstatusフィルタ追加までの暫定対応です。
+
+## マイページの確認
+
+| ファイル | 役割 |
+| --- | --- |
+| `tests/mypage.e2e.cjs` | 100件を超える実購入履歴、プロフィール集計・趣味マップ・最近3件・未取得時の表示を確認 |
+
+```sh
+MYPAGE_E2E_BASE_URL=http://localhost:5182 MYPAGE_E2E_ALLOW_WRITES=1 npm run test:mypage
+```
+
+購入履歴が上限に達した場合は合計を表示せず、趣味マップも未確認の趣味を未購入と断定しません。

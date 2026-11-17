@@ -50,3 +50,18 @@ export async function listPurchases(cursor, signal) {
 export async function getPurchase(id, signal) {
   return readPurchaseWithItem(await authenticatedRequest(`/purchases/${encodeURIComponent(id)}`, { signal }))
 }
+
+/**
+ * マイページの集計用。1回に最大100件ずつ購入履歴を読む（既存の listPurchases の形は変えない）。
+ * 応答の検証は listPurchases と同じ。
+ */
+export async function listPurchasesBatch(cursor, signal) {
+  const query = new URLSearchParams({ limit: '100' })
+  if (cursor !== null) query.set('before_id', String(cursor))
+  const page = await authenticatedRequest(`/purchases?${query}`, { signal })
+  if (!page || !Array.isArray(page.purchases)
+    || (page.next_cursor !== null && (!Number.isSafeInteger(page.next_cursor) || page.next_cursor <= 0))) {
+    throw new ApiError(0, '購入履歴の応答を確認できませんでした。もう一度お試しください。')
+  }
+  return { purchases: page.purchases.map(readPurchaseWithItem), nextCursor: page.next_cursor }
+}

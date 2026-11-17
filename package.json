@@ -21,7 +21,8 @@
     "test:roles": "node tests/roles.e2e.cjs",
     "test:home": "node tests/home.e2e.cjs",
     "test:lightbox": "node tests/lightbox.e2e.cjs",
-    "test:catalog": "node tests/catalog-status.e2e.cjs"
+    "test:catalog": "node tests/catalog-status.e2e.cjs",
+    "test:mypage": "node tests/mypage.e2e.cjs"
   },
   "dependencies": {
     "react": "^19.3.1",

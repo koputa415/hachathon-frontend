@@ -193,6 +193,21 @@ src/components/HobbyClusterChips.jsx
 入れる：趣味チップの表示。入れない：商品取得処理
 Home.jsx から使われる
 hackathon-frontend
+src/components/HobbyMap.jsx
+マイページの「あなたの趣味マップ」。5つの趣味を、購入した趣味とこれから出会う趣味に分けて `#/?category=…` へのリンクのタイルで並べる表示部品
+入れる：趣味タイルの表示。入れない：購入履歴の取得処理、コーラルの使用
+MyPage.jsx から import される。スタイルは pages/MyPage.css
+hackathon-frontend
+src/components/RecentPurchases.jsx
+マイページの「最近の購入」。新しい購入数件を価格・購入日・購入済みバッジ付きで並べ、各行から「この道具を再出品する」へつなぐ表示部品
+入れる：購入行の表示と再出品への導線。入れない：購入の作成処理
+MyPage.jsx から import される。スタイルは pages/MyPage.css
+hackathon-frontend
+src/hooks/usePurchaseSummary.js
+マイページの集計用に本人の購入履歴をすべて読むフック（100件×20ページが上限。上限到達時は complete=false）
+入れる：購入履歴の取得状態。入れない：画面表示
+api/purchases.js の listPurchasesBatch を使い、MyPage.jsx から使われる
+hackathon-frontend
 src/components/ImageLightbox.jsx
 写真の全画面表示（ライトボックス）。ネイティブの <dialog> と showModal() で、フォーカス閉じ込め・Escで閉じる・背景クリックで閉じる・右上の閉じるボタンを備える。開いている間だけマウントする
 入れる：全画面表示の部品。入れない：画像の取得処理、トリガーのボタン
@@ -219,7 +234,7 @@ src/pages/Login.css
 pages/Login.jsx から読まれ、theme/tokens.css を参照する
 hackathon-frontend
 src/pages/MyPage.css
-マイページ専用スタイル（プロフィール帯、カード風ナビ）
+マイページ専用スタイル（プロフィール帯、集計タイル、趣味マップ、最近の購入、いいね見出し）
 入れる：トークン経由のスタイルのみ。入れない：直書きの色指定
 pages/MyPage.jsx から読まれ、theme/tokens.css を参照する
 hackathon-frontend
